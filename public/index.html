@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ยูนนาน YUNNAN IMPORT - ระบบบริหารจัดการแต้มสะสม & บัตรสมาชิก LINE OA</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- QRCode.js & JsBarcode -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <!-- Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            jade: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+              950: '#022c22'
+            },
+            gold: {
+              400: '#e5c17d',
+              500: '#c59b4e',
+              600: '#b4833e',
+              700: '#996515'
+            },
+            seal: {
+              700: '#b91c1c',
+              800: '#991b1b',
+              900: '#7f1d1d'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#fbf9f4] min-h-screen text-slate-800">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="bg-[#022c22] text-white sticky top-0 z-40 border-b border-[#c59b4e]/30 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Brand Logo & Store Name -->
+        <div class="flex items-center space-x-3.5">
+          <img src="img/logo.png" alt="ยูนนาน Yunnan Import" class="w-11 h-11 rounded-full object-cover shadow-lg border-2 border-[#c59b4e] shrink-0">
+          <div>
+            <div class="flex items-center space-x-2">
+              <h1 id="topStoreName" class="font-bold text-base sm:text-lg leading-tight tracking-tight text-white flex items-center gap-1.5">
+                ยูนนาน YUNNAN IMPORT
+                <span class="text-[10px] font-normal bg-seal-800 text-rose-100 border border-seal-700 px-1.5 py-0.2 rounded font-mono">云南</span>
+              </h1>
+              <span id="topPointRateBadge" class="bg-[#064e3b] text-[#fef08a] border border-[#c59b4e]/50 text-[11px] font-medium px-2.5 py-0.5 rounded-full">
+                1 บาท = 1 แต้ม
+              </span>
+            </div>
+            <p id="topStoreTagline" class="text-xs text-amber-200/70">ระบบบริหารจัดการแต้มสะสม & บัตรสมาชิก LINE OA</p>
+          </div>
+        </div>
+
+        <!-- Quick Access Buttons -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <a href="/cashier.html" target="_blank" class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#c59b4e] hover:bg-[#b4833e] text-[#022c22] font-bold shadow-md transition-all">
+            <i class="fa-solid fa-cash-register mr-2"></i>
+            เปิดหน้าจอแคชเชียร์หน้าร้าน
+          </a>
+          <a href="/member.html" target="_blank" class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#064e3b] hover:bg-[#043e2f] text-amber-200 border border-[#c59b4e]/40 transition-all">
+            <i class="fa-solid fa-id-card mr-2 text-[#c59b4e]"></i>
+            เปิดบัตรสมาชิกลูกค้า (LINE)
+          </a>
+          <button onclick="openSettingsModal()" class="p-2 rounded-xl bg-[#064e3b] hover:bg-[#043e2f] text-amber-200 border border-[#c59b4e]/40 transition" title="ตั้งค่าระบบ">
+            <i class="fa-solid fa-gear text-base"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- SUMMARY METRIC CARDS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- Card 1: Members -->
+      <div class="bg-white rounded-2xl p-5 border border-[#e5dfd3] shadow-sm hover:shadow-md transition flex items-center justify-between">
+        <div class="space-y-1">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">สมาชิกทั้งหมด</span>
+          <div class="flex items-baseline space-x-1">
+            <span id="statMembersCount" class="text-2xl sm:text-3xl font-extrabold text-[#022c22]">0</span>
+            <span class="text-sm font-medium text-slate-500">คน</span>
+          </div>
+          <p class="text-[11px] text-emerald-700 font-medium"><i class="fa-solid fa-circle-check mr-1"></i>ระบบพร้อมรับสมาชิก</p>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center text-xl border border-emerald-100">
+          <i class="fa-solid fa-users"></i>
+        </div>
+      </div>
+
+      <!-- Card 2: Total Active Points -->
+      <div class="bg-white rounded-2xl p-5 border border-[#e5dfd3] shadow-sm hover:shadow-md transition flex items-center justify-between">
+        <div class="space-y-1">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">แต้มสะสมคงเหลือในระบบ</span>
+          <div class="flex items-baseline space-x-1">
+            <span id="statPointsBalance" class="text-2xl sm:text-3xl font-extrabold text-[#996515]">0</span>
+            <span class="text-sm font-medium text-slate-500">แต้ม</span>
+          </div>
+          <p class="text-[11px] text-slate-400">พร้อมใช้งานแลกรางวัล</p>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-[#996515] flex items-center justify-center text-xl border border-amber-100">
+          <i class="fa-solid fa-coins"></i>
+        </div>
+      </div>
+
+      <!-- Card 3: Total Sales -->
+      <div class="bg-white rounded-2xl p-5 border border-[#e5dfd3] shadow-sm hover:shadow-md transition flex items-center justify-between">
+        <div class="space-y-1">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ยอดซื้อรวมผ่านระบบ</span>
+          <div class="flex items-baseline space-x-1">
+            <span id="statTotalSales" class="text-2xl sm:text-3xl font-extrabold text-[#022c22]">฿0</span>
+          </div>
+          <p class="text-[11px] text-emerald-700 font-medium"><i class="fa-solid fa-chart-line mr-1"></i>ยอดขายบันทึกแต้ม</p>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center text-xl border border-emerald-100">
+          <i class="fa-solid fa-money-bill-wave"></i>
+        </div>
+      </div>
+
+      <!-- Card 4: Rewards Redeemed -->
+      <div class="bg-white rounded-2xl p-5 border border-[#e5dfd3] shadow-sm hover:shadow-md transition flex items-center justify-between">
+        <div class="space-y-1">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ของรางวัลที่แลกไปแล้ว</span>
+          <div class="flex items-baseline space-x-1">
+            <span id="statRedeemedCount" class="text-2xl sm:text-3xl font-extrabold text-seal-800">0</span>
+            <span class="text-sm font-medium text-slate-500">ครั้ง</span>
+          </div>
+          <p class="text-[11px] text-seal-700 font-medium" id="statPointsRedeemed">0 แต้มถูกใช้</p>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-rose-50 text-seal-800 flex items-center justify-center text-xl border border-rose-100">
+          <i class="fa-solid fa-gift"></i>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ACTION BANNER 1: LINE OA LIFF / MEMBER CARD LINK -->
+    <div class="bg-gradient-to-r from-[#022c22] via-[#064e3b] to-[#043e2f] rounded-2xl p-4 sm:p-5 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 border border-[#c59b4e]/40">
+      <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-2xl text-emerald-400 shrink-0 border border-white/20">
+          <i class="fa-brands fa-line"></i>
+        </div>
+        <div>
+          <h2 class="text-base sm:text-lg font-bold flex items-center gap-2">
+            ลิงก์บัตรสมาชิก LIFF สำหรับใส่ใน Rich Menu LINE OA
+            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-medium">พร้อมใช้งาน</span>
+          </h2>
+          <p class="text-xs sm:text-sm text-emerald-100/90 mt-0.5">
+            นำลิงก์นี้ไปผูกกับปุ่ม "บัตรสมาชิก / เช็คแต้ม" ใน LINE Official Account Manager ให้ลูกค้ากดเปิดดูบัตรได้ทันที
+          </p>
+        </div>
+      </div>
+      <div class="w-full md:w-auto flex items-center space-x-2 bg-black/40 rounded-xl p-1.5 pl-3 border border-white/10">
+        <span id="liffLinkText" class="text-xs text-amber-200 font-mono truncate max-w-[240px] sm:max-w-xs select-all">
+          https://liff.line.me/yunnan-import
+        </span>
+        <button onclick="copyLiffLink()" class="px-3.5 py-1.5 bg-[#c59b4e] hover:bg-[#b4833e] text-[#022c22] font-bold text-xs rounded-lg shadow transition flex items-center space-x-1.5 shrink-0">
+          <i class="fa-regular fa-copy"></i>
+          <span>คัดลอก</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ACTION BANNER 2: REWARD CATALOG BANNER -->
+    <div class="bg-gradient-to-r from-[#1e293b] via-[#022c22] to-[#1e293b] rounded-2xl p-4 sm:p-5 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 border border-[#c59b4e]/30">
+      <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-2xl text-[#c59b4e] shrink-0 border border-white/20">
+          <i class="fa-solid fa-gift"></i>
+        </div>
+        <div>
+          <h2 class="text-base sm:text-lg font-bold">จัดการของรางวัลสะสมแต้ม (Reward Catalog)</h2>
+          <p class="text-xs sm:text-sm text-slate-300 mt-0.5">
+            แก้ไขแต้มที่ใช้แลก เติมสต็อก หรือเพิ่มของรางวัลใหม่สำหรับร้านยูนนาน
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2 shrink-0">
+        <button onclick="openAddRewardModal()" class="px-4 py-2 bg-[#c59b4e] text-[#022c22] hover:bg-[#b4833e] font-bold text-xs sm:text-sm rounded-xl shadow transition flex items-center space-x-1.5">
+          <i class="fa-solid fa-plus text-[#022c22]"></i>
+          <span>+ เพิ่มของรางวัลใหม่</span>
+        </button>
+        <button onclick="switchTab('rewards')" class="px-4 py-2 bg-black/40 hover:bg-black/60 text-white border border-white/20 font-bold text-xs sm:text-sm rounded-xl transition flex items-center space-x-1.5">
+          <i class="fa-solid fa-eye text-amber-200"></i>
+          <span>ดูและแก้ไขของรางวัลทั้งหมด</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN TABS CONTAINER -->
+    <div class="bg-white rounded-2xl border border-[#e5dfd3] shadow-sm overflow-hidden">
+      
+      <!-- TAB NAVIGATION -->
+      <div class="border-b border-[#e5dfd3] px-6 pt-4 flex flex-wrap items-center justify-between gap-4 bg-[#f8f5ee]">
+        <div class="flex space-x-1 sm:space-x-2">
+          <button id="tabBtnMembers" onclick="switchTab('members')" class="tab-button px-4 py-2.5 font-semibold text-sm rounded-t-xl border-b-2 border-[#064e3b] text-[#064e3b] flex items-center space-x-2">
+            <i class="fa-solid fa-users"></i>
+            <span>รายชื่อสมาชิกร้านค้า</span>
+          </button>
+          <button id="tabBtnRewards" onclick="switchTab('rewards')" class="tab-button px-4 py-2.5 font-semibold text-sm rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-2">
+            <i class="fa-solid fa-gift"></i>
+            <span>แคตตาล็อกของรางวัล</span>
+          </button>
+          <button id="tabBtnRedemptions" onclick="switchTab('redemptions')" class="tab-button px-4 py-2.5 font-semibold text-sm rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-2">
+            <i class="fa-solid fa-ticket"></i>
+            <span>ประวัติแลกของรางวัล & ตรวจสอบคูปอง</span>
+          </button>
+          <button id="tabBtnTransactions" onclick="switchTab('transactions')" class="tab-button px-4 py-2.5 font-semibold text-sm rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-2">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>ประวัติบันทึกแต้ม</span>
+          </button>
+        </div>
+
+        <div class="pb-2">
+          <button onclick="refreshData()" class="p-2 text-slate-400 hover:text-[#064e3b] rounded-lg hover:bg-slate-200/60 transition" title="รีเฟรชข้อมูล">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 1: MEMBERS LIST CONTENT -->
+      <div id="tabContentMembers" class="p-6 space-y-4">
+        
+        <!-- Search & Filter Bar -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="w-full sm:w-auto flex-1 flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+              <input type="text" id="memberSearchInput" placeholder="ค้นหาด้วยชื่อ, เบอร์โทรศัพท์, หรือรหัสสมาชิก..." 
+                class="w-full pl-9 pr-4 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b] focus:bg-white transition"
+                onkeyup="if(event.key === 'Enter') loadMembers()">
+            </div>
+            <select id="memberTierFilter" onchange="loadMembers()" class="px-3 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+              <option value="ALL">ระดับทั้งหมด (All Tiers)</option>
+              <option value="Silver">Silver</option>
+              <option value="Gold">Gold</option>
+              <option value="Platinum">Platinum</option>
+              <option value="Diamond">Diamond</option>
+            </select>
+          </div>
+
+          <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+            <button onclick="openAddMemberModal()" class="px-4 py-2 bg-[#064e3b] hover:bg-[#043e2f] text-white font-semibold text-sm rounded-xl shadow-sm transition flex items-center space-x-2">
+              <i class="fa-solid fa-user-plus text-[#c59b4e]"></i>
+              <span>เพิ่มสมาชิกใหม่</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Members Table -->
+        <div class="overflow-x-auto rounded-xl border border-[#e5dfd3]">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-[#f8f5ee] border-b border-[#e5dfd3] text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th class="py-3 px-4">รหัสสมาชิก</th>
+                <th class="py-3 px-4">ชื่อสมาชิก</th>
+                <th class="py-3 px-4">เบอร์โทรศัพท์</th>
+                <th class="py-3 px-4">ระดับ (Tier)</th>
+                <th class="py-3 px-4 text-right">ยอดซื้อสะสม</th>
+                <th class="py-3 px-4 text-right">แต้มคงเหลือ</th>
+                <th class="py-3 px-4">วันที่สมัคร</th>
+                <th class="py-3 px-4 text-center">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="membersTableBody" class="divide-y divide-slate-100 font-medium">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 2: REWARDS CATALOG CONTENT -->
+      <div id="tabContentRewards" class="p-6 space-y-6 hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-lg text-slate-800">แคตตาล็อกของรางวัลสะสมแต้ม</h3>
+            <p class="text-xs text-slate-500">จัดการของขวัญ ชา/สินค้าพรีเมียมยูนนาน และคูปองสำหรับแลกแต้ม</p>
+          </div>
+          <button onclick="openAddRewardModal()" class="px-4 py-2 bg-[#064e3b] hover:bg-[#043e2f] text-white font-semibold text-sm rounded-xl shadow-sm transition flex items-center space-x-2">
+            <i class="fa-solid fa-plus text-[#c59b4e]"></i>
+            <span>เพิ่มของรางวัลใหม่</span>
+          </button>
+        </div>
+
+        <div id="rewardsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <!-- Dynamically Rendered Rewards -->
+        </div>
+      </div>
+
+      <!-- TAB 3: REDEMPTIONS CONTENT -->
+      <div id="tabContentRedemptions" class="p-6 space-y-6 hidden">
+        
+        <!-- Voucher Verification Quick Box -->
+        <div class="bg-gradient-to-r from-emerald-50 to-amber-50 border border-[#c59b4e]/30 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-xl bg-[#064e3b] text-[#c59b4e] flex items-center justify-center text-xl shrink-0">
+              <i class="fa-solid fa-qrcode"></i>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-800 text-base">ตรวจสอบ & ยืนยันการใช้สิทธิ์คูปอง (Voucher Check)</h4>
+              <p class="text-xs text-slate-600">กรอกรหัสคูปองจากมือถือลูกค้าเพื่อตัดสิทธิ์รับของรางวัลหน้าร้าน</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2 w-full sm:w-auto">
+            <input type="text" id="voucherCodeInput" placeholder="เช่น RWD-78421" class="px-4 py-2 border border-[#c59b4e]/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b] uppercase font-mono font-bold tracking-wider">
+            <button onclick="verifyVoucher()" class="px-4 py-2 bg-[#064e3b] hover:bg-[#043e2f] text-white font-bold text-sm rounded-xl shadow transition whitespace-nowrap">
+              <i class="fa-solid fa-check mr-1.5 text-[#c59b4e]"></i> ตรวจสอบ & ใช้งาน
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter and Redemptions Table -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold text-slate-800 text-sm">ประวัติการแลกของรางวัลทั้งหมด</h4>
+            <div class="flex items-center space-x-2">
+              <button onclick="loadRedemptions('')" class="text-xs px-3 py-1 rounded-lg bg-slate-200 text-slate-800 font-medium">ทั้งหมด</button>
+              <button onclick="loadRedemptions('pending')" class="text-xs px-3 py-1 rounded-lg bg-amber-100 text-amber-800 font-medium">ยังไม่ใช้งาน</button>
+              <button onclick="loadRedemptions('redeemed')" class="text-xs px-3 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-medium">ใช้งานแล้ว</button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-[#e5dfd3]">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="bg-[#f8f5ee] border-b border-[#e5dfd3] text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  <th class="py-3 px-4">รหัสคูปอง (Voucher)</th>
+                  <th class="py-3 px-4">ชื่อของรางวัล</th>
+                  <th class="py-3 px-4">สมาชิกที่แลก</th>
+                  <th class="py-3 px-4 text-right">แต้มที่ใช้</th>
+                  <th class="py-3 px-4">วันเวลาที่แลก</th>
+                  <th class="py-3 px-4">สถานะ</th>
+                  <th class="py-3 px-4 text-center">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="redemptionsTableBody" class="divide-y divide-slate-100">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: TRANSACTIONS CONTENT -->
+      <div id="tabContentTransactions" class="p-6 space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-lg text-slate-800">ประวัติความเคลื่อนไหวแต้มทั้งหมด</h3>
+          <select id="txnTypeFilter" onchange="loadTransactions()" class="px-3 py-1.5 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-xs font-medium">
+            <option value="">ประเภททั้งหมด</option>
+            <option value="EARN">สะสมแต้มจากการซื้อ (EARN)</option>
+            <option value="REDEEM">แลกของรางวัล (REDEEM)</option>
+            <option value="ADJUST_ADD">ปรับเพิ่มแต้ม (ADJUST_ADD)</option>
+            <option value="ADJUST_SUB">ปรับลดแต้ม (ADJUST_SUB)</option>
+          </select>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-[#e5dfd3]">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-[#f8f5ee] border-b border-[#e5dfd3] text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th class="py-3 px-4">รหัสรายการ</th>
+                <th class="py-3 px-4">สมาชิก</th>
+                <th class="py-3 px-4">ประเภท</th>
+                <th class="py-3 px-4 text-right">ยอดซื้อ</th>
+                <th class="py-3 px-4 text-right">แต้มที่เปลี่ยน</th>
+                <th class="py-3 px-4 text-right">แต้มคงเหลือสุทธิ</th>
+                <th class="py-3 px-4">รายละเอียด</th>
+                <th class="py-3 px-4">วันเวลา</th>
+              </tr>
+            </thead>
+            <tbody id="transactionsTableBody" class="divide-y divide-slate-100">
+              <!-- Dynamically Rendered -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL: ADD / EDIT MEMBER -->
+  <div id="memberModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative space-y-5">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 id="memberModalTitle" class="font-bold text-lg text-slate-800">เพิ่มสมาชิกใหม่</h3>
+        <button onclick="closeModal('memberModal')" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="memberForm" onsubmit="handleSaveMember(event)" class="space-y-4">
+        <input type="hidden" id="editMemberId">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อ - นามสกุล <span class="text-seal-800">*</span></label>
+          <input type="text" id="memberFormName" required placeholder="เช่น คุณสมชาย ใจดี"
+            class="w-full px-3.5 py-2.5 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">เบอร์โทรศัพท์ (สำหรับสะสมแต้ม) <span class="text-seal-800">*</span></label>
+          <input type="tel" id="memberFormPhone" required placeholder="เช่น 0812345678"
+            class="w-full px-3.5 py-2.5 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+        </div>
+
+        <div id="initialPointsGroup">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">แต้มต้อนรับเริ่มต้น (Welcome Points)</label>
+          <input type="number" id="memberFormPoints" placeholder="0" value="0"
+            class="w-full px-3.5 py-2.5 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">หมายเหตุเพิ่มเติม</label>
+          <textarea id="memberFormNotes" rows="2" placeholder="เช่น สมาชิกสมัครหน้าร้านสาขา 1"
+            class="w-full px-3.5 py-2.5 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeModal('memberModal')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-xl transition">
+            ยกเลิก
+          </button>
+          <button type="submit" class="px-5 py-2.5 bg-[#064e3b] hover:bg-[#043e2f] text-white font-bold text-sm rounded-xl shadow-md transition">
+            บันทึกข้อมูล
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: MEMBER PROFILE & DIGITAL CARD PREVIEW -->
+  <div id="memberProfileModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative space-y-5 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 class="font-bold text-lg text-slate-800">บัตรสมาชิก & ข้อมูลส่วนตัว</h3>
+        <button onclick="closeModal('memberProfileModal')" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- VIRTUAL CARD PREVIEW -->
+      <div id="profileVirtualCard" class="card-tier-gold rounded-3xl p-6 relative overflow-hidden text-white shadow-xl">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2.5">
+            <img src="img/logo.png" class="w-8 h-8 rounded-full border border-amber-300/40">
+            <span class="font-bold text-sm tracking-wide uppercase opacity-95">YUNNAN MEMBER</span>
+          </div>
+          <span id="profileCardTierBadge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/20 backdrop-blur-md border border-white/30">
+            GOLD
+          </span>
+        </div>
+
+        <div class="my-6">
+          <p class="text-xs opacity-75">แต้มสะสมปัจจุบัน</p>
+          <div class="flex items-baseline space-x-2">
+            <span id="profileCardPoints" class="text-4xl font-extrabold tracking-tight">0</span>
+            <span class="text-sm font-semibold opacity-90">แต้ม</span>
+          </div>
+        </div>
+
+        <div class="flex items-end justify-between pt-2 border-t border-white/20">
+          <div>
+            <h4 id="profileCardName" class="font-bold text-base tracking-wide">-</h4>
+            <p id="profileCardPhone" class="text-xs opacity-80 font-mono">-</p>
+          </div>
+          <div class="text-right">
+            <p class="text-[10px] opacity-75 uppercase">MEMBER ID</p>
+            <p id="profileCardCode" class="text-xs font-mono font-bold">-</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- QR & BARCODE -->
+      <div class="bg-[#fbf9f4] border border-[#e5dfd3] rounded-2xl p-4 text-center space-y-3">
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">QR Code สำหรับสะสมแต้ม & แลกรางวัล</p>
+        <div id="profileQrCode" class="flex justify-center py-2"></div>
+        <svg id="profileBarcode" class="mx-auto"></svg>
+      </div>
+
+      <!-- Progress to next tier -->
+      <div id="profileTierProgressBox" class="bg-[#fbf9f4] border border-[#e5dfd3] rounded-2xl p-4 space-y-2">
+        <div class="flex justify-between text-xs font-semibold text-slate-600">
+          <span>ยอดซื้อสะสม: <strong id="profileTotalSpent" class="text-slate-900">฿0</strong></span>
+          <span id="profileNextTierGoal" class="text-[#064e3b]">อีก ฿0 สู่ระดับ Gold</span>
+        </div>
+        <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+          <div id="profileProgressBar" class="bg-[#064e3b] h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center justify-end space-x-2 pt-2">
+        <button id="profileAdjustBtn" class="px-4 py-2 bg-[#c59b4e] hover:bg-[#b4833e] text-[#022c22] font-bold text-xs rounded-xl transition">
+          <i class="fa-solid fa-plus-minus mr-1"></i> ปรับแต้ม
+        </button>
+        <button onclick="closeModal('memberProfileModal')" class="px-4 py-2 bg-slate-800 text-white font-semibold text-xs rounded-xl">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MANUAL ADJUST POINTS -->
+  <div id="adjustModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative space-y-4">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 class="font-bold text-lg text-slate-800">ปรับเพิ่ม / ลดแต้มสมาชิก</h3>
+        <button onclick="closeModal('adjustModal')" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="bg-[#fbf9f4] p-3 rounded-xl border border-[#e5dfd3] text-xs space-y-1">
+        <p>สมาชิก: <strong id="adjustMemberName" class="text-slate-800"></strong></p>
+        <p>แต้มปัจจุบัน: <strong id="adjustCurrentPoints" class="text-[#064e3b] font-bold"></strong> แต้ม</p>
+      </div>
+
+      <form id="adjustForm" onsubmit="handleSaveAdjust(event)" class="space-y-3">
+        <input type="hidden" id="adjustMemberId">
+        
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">การทำรายการ</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center justify-center p-2 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-bold cursor-pointer">
+              <input type="radio" name="adjustType" value="add" checked class="mr-1.5"> + เพิ่มแต้ม
+            </label>
+            <label class="flex items-center justify-center p-2 rounded-xl border border-rose-300 bg-rose-50 text-rose-800 text-xs font-bold cursor-pointer">
+              <input type="radio" name="adjustType" value="deduct" class="mr-1.5"> - หักแต้ม
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">จำนวนแต้ม <span class="text-seal-800">*</span></label>
+          <input type="number" id="adjustPoints" required min="1" placeholder="ระบุจำนวนแต้ม"
+            class="w-full px-3.5 py-2.5 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">เหตุผลในการปรับแต้ม</label>
+          <input type="text" id="adjustReason" placeholder="เช่น โปรโมชั่นพิเศษ, ปรับยอด"
+            class="w-full px-3.5 py-2.5 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeModal('adjustModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl">ยกเลิก</button>
+          <button type="submit" class="px-5 py-2 bg-[#064e3b] hover:bg-[#043e2f] text-white font-bold text-xs rounded-xl shadow">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT REWARD -->
+  <div id="rewardModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 id="rewardModalTitle" class="font-bold text-lg text-slate-800">เพิ่มของรางวัลใหม่</h3>
+        <button onclick="closeModal('rewardModal')" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="rewardForm" onsubmit="handleSaveReward(event)" class="space-y-3.5">
+        <input type="hidden" id="editRewardId">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อของรางวัล <span class="text-seal-800">*</span></label>
+          <input type="text" id="rewardFormName" required placeholder="เช่น ชาผูเอ่อร์ยูนนานพรีเมียม / คูปอง 100 บาท"
+            class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">หมวดหมู่</label>
+          <select id="rewardFormCategory" class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+            <option value="ชา & สินค้ายูนนาน">ชา & สินค้ายูนนาน</option>
+            <option value="คูปองส่วนลด">คูปองส่วนลด</option>
+            <option value="ของพรีเมียม">ของพรีเมียม</option>
+            <option value="บัตรกำนัล">บัตรกำนัล</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">แต้มที่ใช้แลก <span class="text-seal-800">*</span></label>
+            <input type="number" id="rewardFormPoints" required min="1" placeholder="100"
+              class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">จำนวนสต็อก <span class="text-seal-800">*</span></label>
+            <input type="number" id="rewardFormStock" required min="0" placeholder="10"
+              class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">ระดับสมาชิกขั้นต่ำที่แลกได้</label>
+          <select id="rewardFormMinTier" class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+            <option value="Silver">Silver ขึ้นไป (ทุกคน)</option>
+            <option value="Gold">Gold ขึ้นไป</option>
+            <option value="Platinum">Platinum ขึ้นไป</option>
+            <option value="Diamond">Diamond เท่านั้น</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">ลิงก์รูปภาพของรางวัล (URL)</label>
+          <input type="url" id="rewardFormImage" placeholder="https://..."
+            class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">รายละเอียด / เงื่อนไข</label>
+          <textarea id="rewardFormDesc" rows="2" placeholder="รายละเอียดของรางวัลหรือเงื่อนไขการแลก..."
+            class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeModal('rewardModal')" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl">ยกเลิก</button>
+          <button type="submit" class="px-5 py-2 bg-[#064e3b] hover:bg-[#043e2f] text-white font-bold text-xs rounded-xl shadow">บันทึกของรางวัล</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SETTINGS -->
+  <div id="settingsModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 class="font-bold text-lg text-slate-800">ตั้งค่าระบบร้านค้า & การคำนวณแต้ม</h3>
+        <button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="settingsForm" onsubmit="handleSaveSettings(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อร้านค้า</label>
+          <input type="text" id="setStoreName" required
+            class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">คำโปรย / สโลแกน</label>
+          <input type="text" id="setStoreTagline"
+            class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">อัตราแต้ม (กี่บาท = 1 แต้ม)</label>
+            <input type="number" step="0.1" id="setPointRate" required
+              class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+            <span class="text-[10px] text-slate-500">เช่น 1 = ซื้อ 1 บาท ได้ 1 แต้ม</span>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">ลิงก์ LIFF LINE OA</label>
+            <input type="text" id="setLiffUrl"
+              class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+          </div>
+        </div>
+
+        <div class="border-t pt-3 space-y-3">
+          <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">ระดับสมาชิก (Tiers) & ตัวคูณแต้มโบนัส</h4>
+          
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            <div class="col-span-1 font-semibold text-slate-600 flex items-center">ระดับ (Tier)</div>
+            <div class="col-span-1 font-semibold text-slate-600">ยอดสะสมขั้นต่ำ (฿)</div>
+            <div class="col-span-1 font-semibold text-slate-600">ตัวคูณแต้ม (x)</div>
+
+            <!-- Silver -->
+            <div class="flex items-center text-slate-700 font-medium">Silver</div>
+            <input type="number" id="setSilverMin" value="0" disabled class="px-2 py-1 bg-slate-100 border rounded-lg">
+            <input type="number" step="0.1" id="setSilverMultiplier" value="1.0" class="px-2 py-1 bg-slate-50 border rounded-lg">
+
+            <!-- Gold -->
+            <div class="flex items-center text-[#996515] font-bold">Gold</div>
+            <input type="number" id="setGoldMin" class="px-2 py-1 bg-slate-50 border rounded-lg">
+            <input type="number" step="0.1" id="setGoldMultiplier" class="px-2 py-1 bg-slate-50 border rounded-lg">
+
+            <!-- Platinum -->
+            <div class="flex items-center text-[#064e3b] font-bold">Platinum</div>
+            <input type="number" id="setPlatinumMin" class="px-2 py-1 bg-slate-50 border rounded-lg">
+            <input type="number" step="0.1" id="setPlatinumMultiplier" class="px-2 py-1 bg-slate-50 border rounded-lg">
+
+            <!-- Diamond -->
+            <div class="flex items-center text-amber-600 font-bold">Diamond</div>
+            <input type="number" id="setDiamondMin" class="px-2 py-1 bg-slate-50 border rounded-lg">
+            <input type="number" step="0.1" id="setDiamondMultiplier" class="px-2 py-1 bg-slate-50 border rounded-lg">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between border-t pt-3">
+          <button type="button" onclick="handleResetDemo()" class="text-xs text-rose-600 hover:underline">
+            ล้างข้อมูลระบบ (หน้าเปล่า)
+          </button>
+          <div class="flex space-x-2">
+            <button type="button" onclick="closeModal('settingsModal')" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl">ยกเลิก</button>
+            <button type="submit" class="px-5 py-2 bg-[#064e3b] hover:bg-[#043e2f] text-white font-bold text-xs rounded-xl shadow">บันทึกการตั้งค่า</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Central JS logic -->
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

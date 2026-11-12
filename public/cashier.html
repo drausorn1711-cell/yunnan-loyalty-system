@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>หน้าจอแคชเชียร์หน้าร้าน - ยูนนาน YUNNAN IMPORT</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-[#fbf9f4] min-h-screen text-slate-800 flex flex-col">
+
+  <!-- TOP HEADER -->
+  <header class="bg-[#022c22] text-white shadow-md border-b border-[#c59b4e]/30 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3.5">
+        <a href="/" class="p-2 rounded-xl bg-[#064e3b] hover:bg-[#043e2f] text-amber-200 border border-[#c59b4e]/30 transition" title="กลับหน้าแอดมิน">
+          <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <img src="img/logo.png" alt="ยูนนาน" class="w-10 h-10 rounded-full border-2 border-[#c59b4e] object-cover shadow">
+        <div>
+          <h1 class="font-bold text-base text-white leading-tight flex items-center gap-1.5">
+            ยูนนาน YUNNAN IMPORT
+            <span class="text-[10px] font-normal bg-red-800 text-rose-100 px-1.5 py-0.2 rounded font-mono">云南</span>
+          </h1>
+          <p id="cashierStoreTitle" class="text-xs text-amber-200/80">ระบบสะสมแต้ม & แคชเชียร์หน้าร้าน (POS Point Station)</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <span id="cashierRateTag" class="hidden sm:inline-block px-3 py-1 bg-[#064e3b] border border-[#c59b4e]/40 text-amber-200 text-xs rounded-full font-medium">
+          1 บาท = 1 แต้ม
+        </span>
+        <button onclick="openQuickRegisterModal()" class="px-3.5 py-2 bg-[#c59b4e] hover:bg-[#b4833e] text-[#022c22] text-xs font-bold rounded-xl shadow transition flex items-center space-x-1.5">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>สมัครสมาชิกใหม่</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CASHIER WORKSPACE -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT COLUMN: MEMBER SEARCH & ACTIONS (7 cols) -->
+    <div class="lg:col-span-7 space-y-6">
+      
+      <!-- STEP 1: MEMBER LOOKUP BOX -->
+      <div class="bg-white rounded-3xl p-6 border border-[#e5dfd3] shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-slate-800 text-base flex items-center">
+            <span class="w-6 h-6 rounded-full bg-[#064e3b] text-white text-xs flex items-center justify-center mr-2 font-bold">1</span>
+            ค้นหาสมาชิก (Member Search)
+          </h2>
+          <span class="text-xs text-slate-400">ค้นด้วยเบอร์โทร หรือ รหัสสมาชิก</span>
+        </div>
+
+        <div class="relative">
+          <input type="text" id="posMemberInput" placeholder="พิมพ์เบอร์โทรศัพท์ (เช่น 0812345678) หรือ รหัสสมาชิก..." 
+            class="w-full pl-11 pr-24 py-3.5 bg-[#fbf9f4] border border-[#e5dfd3] rounded-2xl text-base sm:text-lg font-mono focus:outline-none focus:ring-2 focus:ring-[#064e3b] focus:bg-white transition"
+            onkeyup="handleSearchInput(event)">
+          <i class="fa-solid fa-magnifying-glass absolute left-4 top-4 text-slate-400 text-lg"></i>
+          <button onclick="searchMember()" class="absolute right-2 top-2 px-4 py-2 bg-[#064e3b] hover:bg-[#043e2f] text-white font-bold text-xs sm:text-sm rounded-xl shadow transition">
+            ค้นหา
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: MEMBER DETAIL DISPLAY -->
+      <div id="selectedMemberCard" class="hidden bg-white rounded-3xl p-6 border border-[#e5dfd3] shadow-md space-y-6 animate-in fade-in duration-300">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#e5dfd3]">
+          <div class="flex items-center space-x-4">
+            <div id="memberTierAvatar" class="w-14 h-14 rounded-2xl bg-[#064e3b] text-amber-300 flex items-center justify-center text-2xl shadow font-bold border border-[#c59b4e]/40">
+              <i class="fa-solid fa-crown"></i>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h3 id="posMemberName" class="font-extrabold text-xl text-slate-900">-</h3>
+                <span id="posMemberTierBadge"></span>
+              </div>
+              <p class="text-xs text-slate-500 font-mono mt-0.5">
+                รหัส: <strong id="posMemberCode" class="text-slate-700">-</strong> | 
+                เบอร์: <strong id="posMemberPhone" class="text-slate-700">-</strong>
+              </p>
+            </div>
+          </div>
+
+          <div class="text-right sm:text-right w-full sm:w-auto bg-[#f8f5ee] p-3 rounded-2xl border border-[#e5dfd3]">
+            <span class="text-[11px] font-semibold text-[#064e3b] uppercase tracking-wider">แต้มคงเหลือปัจจุบัน</span>
+            <div class="flex items-baseline justify-end space-x-1">
+              <span id="posMemberPoints" class="text-3xl font-black text-[#064e3b]">0</span>
+              <span class="text-xs font-bold text-[#064e3b]">แต้ม</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: RECORD PURCHASE & EARN POINTS -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold text-slate-800 text-sm flex items-center">
+              <span class="w-6 h-6 rounded-full bg-[#064e3b] text-white text-xs flex items-center justify-center mr-2 font-bold">2</span>
+              บันทึกยอดซื้อ & คำนวณแต้มสะสม
+            </h4>
+            <span id="posMultiplierInfo" class="text-xs text-[#996515] font-semibold">
+              <i class="fa-solid fa-bolt mr-1"></i>โบนัสระดับ Gold x1.2
+            </span>
+          </div>
+
+          <!-- Purchase Amount Input -->
+          <div class="relative">
+            <span class="absolute left-4 top-3 text-2xl font-bold text-slate-400">฿</span>
+            <input type="number" id="posAmountInput" placeholder="0.00" min="0" step="1"
+              class="w-full pl-10 pr-4 py-3 bg-[#fbf9f4] border border-[#e5dfd3] rounded-2xl text-2xl font-black font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#064e3b] focus:bg-white transition"
+              oninput="calculatePointsPreview()">
+          </div>
+
+          <!-- Quick Amount Buttons -->
+          <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            <button type="button" onclick="setQuickAmount(50)" class="py-2 rounded-xl bg-[#f8f5ee] hover:bg-[#e5dfd3] text-xs font-bold text-slate-700 transition">+50</button>
+            <button type="button" onclick="setQuickAmount(100)" class="py-2 rounded-xl bg-[#f8f5ee] hover:bg-[#e5dfd3] text-xs font-bold text-slate-700 transition">+100</button>
+            <button type="button" onclick="setQuickAmount(200)" class="py-2 rounded-xl bg-[#f8f5ee] hover:bg-[#e5dfd3] text-xs font-bold text-slate-700 transition">+200</button>
+            <button type="button" onclick="setQuickAmount(500)" class="py-2 rounded-xl bg-[#f8f5ee] hover:bg-[#e5dfd3] text-xs font-bold text-slate-700 transition">+500</button>
+            <button type="button" onclick="setQuickAmount(1000)" class="py-2 rounded-xl bg-[#f8f5ee] hover:bg-[#e5dfd3] text-xs font-bold text-slate-700 transition">+1,000</button>
+            <button type="button" onclick="clearAmount()" class="py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-xs font-bold text-rose-700 transition">ล้าง</button>
+          </div>
+
+          <!-- Receipt and Notes (Optional) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <input type="text" id="posReceiptNo" placeholder="เลขที่ใบเสร็จ (ถ้ามี)" class="px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+            <input type="text" id="posNote" placeholder="หมายเหตุ / สาขา (ถ้ามี)" class="px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+          </div>
+
+          <!-- Preview calculation -->
+          <div class="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <span class="text-xs text-emerald-900 font-semibold">แต้มที่จะได้รับในบิลนี้:</span>
+              <p class="text-[11px] text-emerald-700" id="posFormulaHint">คำนวณจากยอดซื้อและตัวคูณระดับสมาชิก</p>
+            </div>
+            <div class="flex items-baseline space-x-1">
+              <span id="posPreviewPoints" class="text-2xl font-black text-[#064e3b]">+0</span>
+              <span class="text-xs font-bold text-[#064e3b]">แต้ม</span>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button id="posEarnBtn" onclick="handlePosEarnPoints()" class="w-full py-4 bg-[#064e3b] hover:bg-[#043e2f] text-white font-extrabold text-base rounded-2xl shadow-lg hover:shadow-xl transition flex items-center justify-center space-x-2 border border-[#c59b4e]/30">
+            <i class="fa-solid fa-circle-check text-xl text-[#c59b4e]"></i>
+            <span>ยืนยันบันทึกยอดซื้อ & สะสมแต้ม</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- EMPTY STATE WHEN NO MEMBER IS SELECTED -->
+      <div id="noMemberPlaceholder" class="bg-white rounded-3xl p-12 border border-[#e5dfd3] text-center space-y-3">
+        <div class="w-16 h-16 rounded-2xl bg-[#f8f5ee] text-[#064e3b] flex items-center justify-center mx-auto text-3xl border border-[#e5dfd3]">
+          <i class="fa-solid fa-address-card"></i>
+        </div>
+        <h3 class="font-bold text-slate-700 text-lg">ยังไม่ได้เลือกสมาชิก</h3>
+        <p class="text-xs text-slate-400 max-w-sm mx-auto">
+          กรุณากรอกเบอร์โทรศัพท์หรือรหัสสมาชิกด้านบนเพื่อเริ่มสะสมแต้ม หรือกดปุ่ม "สมัครสมาชิกใหม่" หากยังไม่เคยเป็นสมาชิก
+        </p>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: REWARD REDEMPTION & VOUCHER VERIFICATION (5 cols) -->
+    <div class="lg:col-span-5 space-y-6">
+
+      <!-- QUICK VOUCHER VERIFICATION -->
+      <div class="bg-white rounded-3xl p-6 border border-[#e5dfd3] shadow-sm space-y-4">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-50 text-[#996515] flex items-center justify-center text-lg border border-amber-200">
+            <i class="fa-solid fa-ticket"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm">ตรวจสอบคูปองลูกค้า (Voucher Check)</h3>
+            <p class="text-xs text-slate-400">กรอกรหัสคูปองจากหน้าจอลูกค้าเพื่อใช้สิทธิ์</p>
+          </div>
+        </div>
+
+        <div class="flex space-x-2">
+          <input type="text" id="posVoucherInput" placeholder="รหัส เช่น RWD-78421"
+            class="flex-1 px-3.5 py-2.5 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+          <button onclick="handlePosVerifyVoucher()" class="px-4 py-2.5 bg-[#064e3b] hover:bg-[#043e2f] text-white font-bold text-xs rounded-xl shadow transition whitespace-nowrap">
+            ตรวจสอบ
+          </button>
+        </div>
+      </div>
+
+      <!-- IN-STORE INSTANT REWARD REDEMPTION -->
+      <div class="bg-white rounded-3xl p-6 border border-[#e5dfd3] shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-slate-800 text-sm flex items-center space-x-2">
+            <i class="fa-solid fa-gift text-[#c59b4e]"></i>
+            <span>แลกของรางวัลหน้าร้านทันที</span>
+          </h3>
+          <span class="text-[11px] text-slate-400">หักแต้ม & มอบของรางวัล</span>
+        </div>
+
+        <div id="cashierRewardsList" class="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+          <div class="text-center py-8 text-slate-400 text-xs">
+            กำลังโหลดรายการของรางวัล...
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- QUICK REGISTER MODAL -->
+  <div id="quickRegisterModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative space-y-4">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 class="font-bold text-lg text-slate-800">สมัครสมาชิกด่วนหน้าร้าน</h3>
+        <button onclick="closeModal('quickRegisterModal')" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="quickRegisterForm" onsubmit="handleQuickRegister(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อลูกค้า <span class="text-rose-600">*</span></label>
+          <input type="text" id="regName" required placeholder="เช่น คุณวันชัย บุญมี"
+            class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">เบอร์โทรศัพท์ <span class="text-rose-600">*</span></label>
+          <input type="tel" id="regPhone" required placeholder="เช่น 0891112233"
+            class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">แต้มต้อนรับเริ่มต้น</label>
+          <input type="number" id="regPoints" value="0"
+            class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeModal('quickRegisterModal')" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl">ยกเลิก</button>
+          <button type="submit" class="px-5 py-2 bg-[#064e3b] hover:bg-[#043e2f] text-white font-bold text-xs rounded-xl shadow">สมัครสมาชิก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/cashier.js"></script>
+</body>
+</html>

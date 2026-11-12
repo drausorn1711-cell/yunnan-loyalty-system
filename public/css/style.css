@@ -1,0 +1,129 @@
+@import url('https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --font-thai: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-en: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --primary-jade: #064e3b;      /* Deep Yunnan Jade Green */
+  --primary-dark-jade: #022c22;
+  --primary-gold: #c59b4e;      /* Antique Mountain Gold */
+  --primary-gold-dark: #996515;
+  --chinese-red: #991b1b;       /* Imperial Seal Red (云南) */
+  --bg-cream: #fbf9f4;
+}
+
+body {
+  font-family: var(--font-thai);
+  background-color: var(--bg-cream);
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Luxury Yunnan Member Card Gradients */
+.card-tier-silver {
+  background: linear-gradient(135deg, #64748b 0%, #475569 50%, #064e3b 100%);
+  color: #ffffff;
+  box-shadow: 0 15px 30px -5px rgba(2, 44, 34, 0.4);
+  border: 1px solid rgba(197, 155, 78, 0.3);
+}
+
+.card-tier-gold {
+  background: linear-gradient(135deg, #996515 0%, #c59b4e 50%, #78350f 100%);
+  color: #ffffff;
+  box-shadow: 0 15px 30px -5px rgba(180, 83, 9, 0.4);
+  border: 1px solid rgba(254, 240, 138, 0.5);
+}
+
+.card-tier-platinum {
+  background: linear-gradient(135deg, #022c22 0%, #064e3b 50%, #047857 100%);
+  color: #f8fafc;
+  box-shadow: 0 15px 30px -5px rgba(6, 78, 59, 0.5);
+  border: 1.5px solid #c59b4e;
+}
+
+.card-tier-diamond {
+  background: linear-gradient(135deg, #021a14 0%, #064e3b 45%, #996515 100%);
+  color: #ffffff;
+  box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.6);
+  border: 1.5px solid #fde047;
+}
+
+/* Glassmorphism effects */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(197, 155, 78, 0.2);
+}
+
+.glass-dark {
+  background: rgba(2, 44, 34, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(197, 155, 78, 0.3);
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 3.5s infinite;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f5f0e6;
+}
+::-webkit-scrollbar-thumb {
+  background: #c59b4e;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #996515;
+}
+
+/* Custom Badges */
+.badge-tier-silver {
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+.badge-tier-gold {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+.badge-tier-platinum {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+.badge-tier-diamond {
+  background-color: #fefce8;
+  color: #854d0e;
+  border: 1.5px solid #eab308;
+}
+
+/* Chinese lattice border motif style */
+.chinese-border {
+  border-color: #c59b4e;
+}

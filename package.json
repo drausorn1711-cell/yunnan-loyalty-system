@@ -1,0 +1,28 @@
+{
+  "name": "yunnan-loyalty-system",
+  "version": "1.0.0",
+  "description": "ระบบบริหารจัดการแต้มสะสม & บัตรสมาชิกดิจิทัล ยูนนาน YUNNAN IMPORT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "keywords": [
+    "loyalty",
+    "points",
+    "rewards",
+    "line-oa",
+    "pos",
+    "yunnan"
+  ],
+  "author": "Yunnan Import",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.3.0"
+  }
+}

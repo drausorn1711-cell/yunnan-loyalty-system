@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>บัตรสมาชิก ยูนนาน YUNNAN IMPORT (LINE LIFF)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- QRCode.js & JsBarcode -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <!-- Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body {
+      background-color: #022c22;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col items-center justify-start p-0 sm:py-6">
+
+  <!-- TOP BAR (Only visible on Desktop to switch members or register) -->
+  <div class="w-full max-w-md px-4 py-2 hidden sm:flex items-center justify-between text-xs text-amber-200/80">
+    <div class="flex items-center space-x-2">
+      <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+      <span class="font-medium">LINE LIFF Mobile Simulator</span>
+    </div>
+    <div class="flex items-center space-x-2">
+      <label for="memberSelector" class="text-amber-200/60">สลับลูกค้า:</label>
+      <select id="memberSelector" onchange="changeMember(this.value)" class="bg-[#064e3b] text-amber-100 rounded-lg px-2 py-1 text-xs border border-[#c59b4e]/40">
+        <!-- Populated via JS -->
+      </select>
+    </div>
+  </div>
+
+  <!-- MOBILE DEVICE CONTAINER -->
+  <div class="w-full max-w-md bg-[#fbf9f4] min-h-screen sm:min-h-[840px] sm:rounded-[36px] shadow-2xl flex flex-col overflow-hidden relative border border-[#c59b4e]/30">
+
+    <!-- LINE LIFF HEADER -->
+    <header class="bg-[#022c22] text-white px-5 pt-4 pb-3 flex items-center justify-between shadow-sm sticky top-0 z-30 border-b border-[#c59b4e]/20">
+      <div class="flex items-center space-x-2.5">
+        <img src="img/logo.png" alt="ยูนนาน" class="w-8 h-8 rounded-full border border-[#c59b4e] object-cover shadow">
+        <div>
+          <h1 id="customerStoreName" class="font-bold text-sm leading-tight text-white flex items-center gap-1.5">
+            ยูนนาน YUNNAN IMPORT
+            <span class="text-[9px] bg-red-800 text-rose-100 px-1 py-0.2 rounded font-mono">云南</span>
+          </h1>
+          <p class="text-[10px] text-amber-200/70">LINE Official Account Member Card</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <button onclick="promptLogin()" class="p-1.5 rounded-lg bg-[#064e3b] hover:bg-[#043e2f] text-amber-200 text-xs border border-[#c59b4e]/30" title="เข้าสู่ระบบด้วยเบอร์อื่น">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i>
+        </button>
+        <a href="/" target="_blank" class="p-1.5 rounded-lg bg-[#064e3b] hover:bg-[#043e2f] text-amber-200 text-xs border border-[#c59b4e]/30" title="ไปหน้าแดชบอร์ดร้าน">
+          <i class="fa-solid fa-store"></i>
+        </a>
+      </div>
+    </header>
+
+    <!-- CONTENT BODY (SCROLLABLE) -->
+    <main class="flex-1 overflow-y-auto px-4 py-5 space-y-5 pb-24">
+
+      <!-- ONBOARDING REGISTRATION VIEW (Shown when no member is found) -->
+      <section id="customerRegisterView" class="space-y-5 py-4 hidden">
+        <div class="text-center space-y-3">
+          <img src="img/logo.png" alt="ยูนนาน" class="w-24 h-24 rounded-full border-4 border-[#c59b4e] mx-auto shadow-lg object-cover">
+          <div>
+            <h2 class="text-xl font-extrabold text-[#022c22]">เปิดบัตรสมาชิกดิจิทัล</h2>
+            <p class="text-xs text-slate-500 mt-1">สมัครสมาชิกสะสมแต้มกับ ยูนนาน YUNNAN IMPORT</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 border border-[#e5dfd3] shadow-md space-y-4">
+          <form id="custSelfRegForm" onsubmit="handleCustomerSelfRegister(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">ชื่อ - นามสกุล</label>
+              <input type="text" id="custRegName" required placeholder="เช่น คุณสมชาย ใจดี"
+                class="w-full px-3.5 py-2.5 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">เบอร์โทรศัพท์ (สำหรับสะสมแต้ม)</label>
+              <input type="tel" id="custRegPhone" required placeholder="เช่น 0812345678"
+                class="w-full px-3.5 py-2.5 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-[#064e3b] hover:bg-[#043e2f] text-white font-bold text-sm rounded-xl shadow-lg transition">
+              <i class="fa-solid fa-id-card mr-2 text-[#c59b4e]"></i> เปิดบัตรสมาชิกทันที
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- SECTION: VIRTUAL MEMBER CARD -->
+      <section id="customerCardContainer" class="space-y-4">
+        
+        <!-- CARD GRAPHIC -->
+        <div id="virtualMemberCard" class="card-tier-gold rounded-3xl p-5 relative overflow-hidden text-white shadow-xl animate-shimmer transition-all duration-300">
+          
+          <!-- Top Row -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <img src="img/logo.png" class="w-7 h-7 rounded-full border border-amber-300/60 object-cover">
+              <span class="font-bold text-xs tracking-wider uppercase opacity-95" id="cardStoreTag">YUNNAN MEMBER</span>
+            </div>
+            <span id="custCardTierBadge" class="px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-white/25 backdrop-blur-md border border-white/30 shadow-sm">
+              SILVER
+            </span>
+          </div>
+
+          <!-- Points Center -->
+          <div class="my-5">
+            <span class="text-[11px] opacity-80 uppercase tracking-wider">แต้มสะสมปัจจุบัน</span>
+            <div class="flex items-baseline space-x-1.5">
+              <span id="custCardPoints" class="text-4xl sm:text-5xl font-black tracking-tight">0</span>
+              <span class="text-sm font-semibold opacity-90">แต้ม</span>
+            </div>
+          </div>
+
+          <!-- Bottom Info -->
+          <div class="flex items-end justify-between pt-3 border-t border-white/20">
+            <div>
+              <h3 id="custCardName" class="font-bold text-base leading-tight">-</h3>
+              <p id="custCardPhone" class="text-xs opacity-85 font-mono">-</p>
+            </div>
+            <div class="text-right">
+              <p class="text-[9px] opacity-75 uppercase">MEMBER NO.</p>
+              <p id="custCardCode" class="text-xs font-mono font-bold">-</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TIER PROGRESS CARD -->
+        <div id="custTierProgressCard" class="bg-white rounded-2xl p-4 border border-[#e5dfd3] shadow-sm space-y-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-slate-700">ระดับ: <span id="custCurrentTierLabel" class="text-[#064e3b]">Silver Member</span></span>
+            <span id="custNextTierText" class="text-[#996515] font-semibold">อีก ฿1,000 เป็น Gold</span>
+          </div>
+          <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+            <div id="custProgressBar" class="bg-gradient-to-r from-[#064e3b] to-[#c59b4e] h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+          </div>
+          <p class="text-[10px] text-slate-400 text-right">ยอดซื้อสะสมทั้งหมด: <strong id="custTotalSpent" class="text-slate-700">฿0</strong></p>
+        </div>
+
+        <!-- DIGITAL BARCODE & QR CODE TO SCAN AT CASHIER -->
+        <div class="bg-white rounded-2xl p-4 border border-[#e5dfd3] shadow-sm text-center space-y-3">
+          <p class="text-xs font-bold text-slate-700">ยื่นให้พนักงานสแกนเพื่อสะสมแต้ม</p>
+          <div class="flex justify-center py-1">
+            <div id="custQrCode" class="p-2 bg-white rounded-xl border border-slate-100 shadow-sm"></div>
+          </div>
+          <div class="flex justify-center">
+            <svg id="custBarcode" class="max-w-full"></svg>
+          </div>
+          <p class="text-[10px] text-slate-400">แสดงหน้าจอนี้แก่แคชเชียร์ทุกครั้งที่สั่งซื้อสินค้า</p>
+        </div>
+
+      </section>
+
+      <!-- SECTION: REWARDS CATALOG (TAB) -->
+      <section id="customerRewardsContainer" class="space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-slate-800 text-base">ของรางวัลแลกแต้ม</h3>
+          <span class="text-xs text-[#064e3b] font-bold" id="rewardPointsHeader">แต้มของคุณ: 0</span>
+        </div>
+
+        <div id="custRewardsList" class="space-y-3">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- SECTION: MY VOUCHERS (TAB) -->
+      <section id="customerVouchersContainer" class="space-y-4 hidden">
+        <h3 class="font-bold text-slate-800 text-base">คูปองของฉัน (My Vouchers)</h3>
+        
+        <div id="custVouchersList" class="space-y-3">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- SECTION: MY ACTIVITY / TRANSACTIONS (TAB) -->
+      <section id="customerActivityContainer" class="space-y-4 hidden">
+        <h3 class="font-bold text-slate-800 text-base">ประวัติแต้มสะสม</h3>
+
+        <div id="custActivityList" class="space-y-2">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+    </main>
+
+    <!-- BOTTOM FLOATING TAB BAR (APP STYLE) -->
+    <nav class="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-[#e5dfd3] px-4 py-2 flex items-center justify-around z-40">
+      
+      <!-- Tab 1: Card -->
+      <button onclick="switchCustTab('card')" id="custTabBtnCard" class="flex flex-col items-center text-[#064e3b]">
+        <i class="fa-solid fa-id-card text-lg"></i>
+        <span class="text-[10px] font-bold mt-1">บัตรของฉัน</span>
+      </button>
+
+      <!-- Tab 2: Rewards -->
+      <button onclick="switchCustTab('rewards')" id="custTabBtnRewards" class="flex flex-col items-center text-slate-400 hover:text-slate-700">
+        <i class="fa-solid fa-gift text-lg"></i>
+        <span class="text-[10px] font-medium mt-1">แลกรางวัล</span>
+      </button>
+
+      <!-- Tab 3: Vouchers -->
+      <button onclick="switchCustTab('vouchers')" id="custTabBtnVouchers" class="flex flex-col items-center text-slate-400 hover:text-slate-700">
+        <i class="fa-solid fa-ticket text-lg"></i>
+        <span class="text-[10px] font-medium mt-1">คูปองฉัน</span>
+      </button>
+
+      <!-- Tab 4: Activity -->
+      <button onclick="switchCustTab('activity')" id="custTabBtnActivity" class="flex flex-col items-center text-slate-400 hover:text-slate-700">
+        <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+        <span class="text-[10px] font-medium mt-1">ประวัติ</span>
+      </button>
+
+    </nav>
+
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/member.js"></script>
+</body>
+</html>
