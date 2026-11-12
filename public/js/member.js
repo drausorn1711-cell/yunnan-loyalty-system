@@ -4,6 +4,8 @@ let currentSettings = null;
 let allMembers = [];
 let availableRewards = [];
 
+let lineProfile = null;
+
 document.addEventListener('DOMContentLoaded', async () => {
   await initPortal();
 });
@@ -17,6 +19,26 @@ async function initPortal() {
       document.getElementById('cardStoreTag').innerText = currentSettings.store_name.slice(0, 16);
     }
 
+    // Try LINE LIFF Initialization if running in LINE
+    if (typeof liff !== 'undefined') {
+      try {
+        const liffUrl = currentSettings?.liff_url || '';
+        // Extract LIFF ID if URL format is https://liff.line.me/XXXX-YYYY
+        const match = liffUrl.match(/liff\.line\.me\/([a-zA-Z0-9_-]+)/);
+        const liffId = match ? match[1] : null;
+
+        if (liffId) {
+          await liff.init({ liffId });
+          if (liff.isLoggedIn()) {
+            lineProfile = await liff.getProfile();
+            console.log('LINE User Profile:', lineProfile);
+          }
+        }
+      } catch (liffErr) {
+        console.warn('LIFF init notice:', liffErr);
+      }
+    }
+
     // Load all members for demo switcher
     const memRes = await api.getMembers();
     if (memRes.success) {
@@ -24,17 +46,31 @@ async function initPortal() {
       populateMemberSelector(allMembers);
     }
 
-    // Determine which member to load (from URL param, localStorage, or first member)
+    // Check if LINE Profile matches any registered member
+    let matchedMember = null;
+    if (lineProfile) {
+      matchedMember = allMembers.find(m => m.notes && m.notes.includes(lineProfile.userId));
+      if (!matchedMember && lineProfile.displayName) {
+        matchedMember = allMembers.find(m => m.name.toLowerCase() === lineProfile.displayName.toLowerCase());
+      }
+    }
+
+    // Determine which member to load
     const urlParams = new URLSearchParams(window.location.search);
     const phoneParam = urlParams.get('phone') || urlParams.get('code') || localStorage.getItem('last_member_phone');
 
-    if (phoneParam) {
+    if (matchedMember) {
+      await loadMemberProfile(matchedMember.phone);
+    } else if (phoneParam) {
       await loadMemberProfile(phoneParam);
     } else if (allMembers.length > 0) {
       await loadMemberProfile(allMembers[0].phone);
     } else {
       // Empty system: Show self-registration view
       showRegisterView();
+      if (lineProfile) {
+        document.getElementById('custRegName').value = lineProfile.displayName || '';
+      }
     }
 
     // Load rewards catalog

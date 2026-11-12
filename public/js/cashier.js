@@ -2,6 +2,7 @@
 let currentSettings = null;
 let selectedMember = null;
 let allRewards = [];
+let html5QrScanner = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSettingsAndRewards();
@@ -12,14 +13,14 @@ async function loadSettingsAndRewards() {
     const setRes = await api.getSettings();
     if (setRes.success) {
       currentSettings = setRes.settings;
-      document.getElementById('cashierStoreTitle').innerText = `${currentSettings.store_name} - หน้าร้าน`;
-      document.getElementById('cashierRateTag').innerText = `${currentSettings.point_rate} บาท = 1 แต้ม`;
+      document.getElementById('cashierRateTag').innerText = `อัตราส่วน ${currentSettings.point_rate} บาท = 1 แต้ม • ${currentSettings.store_name}`;
+      document.getElementById('posRateSubtitle').innerText = `ระบบจะคำนวณ ${currentSettings.point_rate} บาท = 1 แต้ม อัตโนมัติ`;
+      document.getElementById('posFormulaHint').innerText = `อัตราคำนวณ ${currentSettings.point_rate} บาท = 1 แต้ม`;
     }
 
     const rwdRes = await api.getRewards(true);
     if (rwdRes.success) {
       allRewards = rwdRes.rewards;
-      renderCashierRewards();
     }
   } catch (err) {
     console.error('Error loading settings/rewards:', err);
@@ -35,11 +36,6 @@ function handleSearchInput(e) {
   }
 }
 
-function quickSelectMember(phone) {
-  document.getElementById('posMemberInput').value = phone;
-  searchMember();
-}
-
 async function searchMember() {
   const query = document.getElementById('posMemberInput').value.trim();
   if (!query) {
@@ -51,15 +47,19 @@ async function searchMember() {
     const res = await api.getMember(query);
     if (res.success && res.member) {
       selectMember(res.member);
+      // Stop scanner if active
+      if (html5QrScanner) {
+        stopScanner();
+      }
     } else {
       Swal.fire({
         icon: 'info',
         title: 'ไม่พบสมาชิก',
-        text: `ไม่พบข้อมูลสำหรับ "${query}" ต้องการสมัครสมาชิกใหม่หรือไม่?`,
+        text: `ไม่พบข้อมูลสำหรับ "${query}" ต้องการสมัครสมาชิกใหม่ให้ลูกค้าเลยหรือไม่?`,
         showCancelButton: true,
         confirmButtonText: 'สมัครสมาชิกใหม่',
         cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#10b981'
+        confirmButtonColor: '#064e3b'
       }).then(result => {
         if (result.isConfirmed) {
           openQuickRegisterModal(query);
@@ -74,10 +74,8 @@ async function searchMember() {
 function selectMember(member) {
   selectedMember = member;
 
-  // Render UI
-  document.getElementById('selectedMemberCard').classList.remove('hidden');
-  document.getElementById('noMemberPlaceholder').classList.add('hidden');
-
+  // Show Member Found Card
+  document.getElementById('memberFoundCard').classList.remove('hidden');
   document.getElementById('posMemberName').innerText = member.name;
   document.getElementById('posMemberCode').innerText = member.member_code;
   document.getElementById('posMemberPhone').innerText = formatPhone(member.phone);
@@ -86,17 +84,17 @@ function selectMember(member) {
 
   // Multiplier Info
   const mult = getMemberMultiplier(member.tier);
+  const multBox = document.getElementById('posMultiplierInfo');
   if (mult > 1.0) {
-    document.getElementById('posMultiplierInfo').innerHTML = `<i class="fa-solid fa-bolt mr-1 text-amber-500"></i>โบนัส Tier ${member.tier} x${mult}`;
-    document.getElementById('posMultiplierInfo').classList.remove('hidden');
+    multBox.innerHTML = `<i class="fa-solid fa-bolt mr-1 text-amber-600"></i>โบนัส Tier ${member.tier} x${mult}`;
+    multBox.classList.remove('hidden');
   } else {
-    document.getElementById('posMultiplierInfo').classList.add('hidden');
+    multBox.classList.add('hidden');
   }
 
   calculatePointsPreview();
-  renderCashierRewards();
 
-  // Focus amount input
+  // Focus on amount input for fast cashier workflow
   document.getElementById('posAmountInput').focus();
 }
 
@@ -127,80 +125,110 @@ function clearAmount() {
 
 function calculatePointsPreview() {
   const amount = parseFloat(document.getElementById('posAmountInput').value) || 0;
+  const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'TRANSFER';
+  const isCOD = paymentMethod === 'COD';
+
+  if (isCOD) {
+    document.getElementById('posPreviewPoints').innerText = `+0`;
+    document.getElementById('posFormulaHint').innerHTML = `<span class="text-amber-700 font-bold">⚠️ ยอดเก็บเงินปลายทาง (COD) ไม่ได้รับแต้มสะสม</span>`;
+    return;
+  }
+
   const rate = currentSettings?.point_rate || 1.0;
   const multiplier = selectedMember ? getMemberMultiplier(selectedMember.tier) : 1.0;
 
   const points = Math.floor((amount / rate) * multiplier);
 
   document.getElementById('posPreviewPoints').innerText = `+${utils.formatNumber(points)}`;
-  document.getElementById('posFormulaHint').innerText = `อัตรา ฿${rate} = 1 แต้ม ${multiplier > 1.0 ? `(โบนัส x${multiplier})` : ''}`;
+  document.getElementById('posFormulaHint').innerText = `อัตรา ${rate} บาท = 1 แต้ม ${multiplier > 1.0 ? `(โบนัส Tier ${selectedMember.tier} x${multiplier})` : ''}`;
 }
 
 // --------------------------------------------------
 // SUBMIT POS EARN POINTS
 // --------------------------------------------------
 async function handlePosEarnPoints() {
+  // If member is not selected yet, check if text was typed in search input
   if (!selectedMember) {
-    Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาค้นหาและเลือกสมาชิกก่อน' });
-    return;
+    const query = document.getElementById('posMemberInput').value.trim();
+    if (query) {
+      const res = await api.getMember(query);
+      if (res.success && res.member) {
+        selectMember(res.member);
+      } else {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ยังไม่พบสมาชิก',
+          text: 'กรุณากดค้นหาสมาชิก หรือกดสมัครสมาชิกใหม่ก่อนสะสมแต้ม'
+        });
+        return;
+      }
+    } else {
+      Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณากรอกเบอร์โทรหรือรหัสสมาชิกลูกค้าที่ข้อ 1 ก่อน' });
+      document.getElementById('posMemberInput').focus();
+      return;
+    }
   }
 
   const amount = parseFloat(document.getElementById('posAmountInput').value);
   if (!amount || amount <= 0) {
-    Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาระบุยอดซื้อสินค้าที่ถูกต้อง' });
+    Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาระบุยอดเงินที่ชำระที่ถูกต้อง' });
+    document.getElementById('posAmountInput').focus();
     return;
   }
 
   const receipt_no = document.getElementById('posReceiptNo').value.trim();
-  const note = document.getElementById('posNote').value.trim();
+  const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'TRANSFER';
 
   const btn = document.getElementById('posEarnBtn');
   btn.disabled = true;
-  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xl mr-2"></i>กำลังบันทึก...`;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xl mr-2"></i>กำลังบันทึกแต้ม...`;
 
   try {
     const res = await api.posEarnPoints({
       identifier: selectedMember.phone,
       amount,
       receipt_no,
-      note
+      payment_method: paymentMethod
     });
 
     if (res.success) {
-      utils.playSuccessSound();
-      utils.fireConfetti();
+      if (!res.is_cod) {
+        utils.playSuccessSound();
+        utils.fireConfetti();
+      }
 
-      // Check tier upgrade alert
       let upgradeHtml = '';
       if (res.is_upgraded) {
         upgradeHtml = `
-          <div class="mt-3 p-3 bg-gradient-to-r from-amber-100 to-amber-200 border border-amber-300 rounded-xl text-amber-900 font-bold text-center animate-bounce">
+          <div class="mt-3 p-3 bg-gradient-to-r from-amber-100 to-amber-200 border border-amber-300 rounded-xl text-amber-900 font-bold text-center">
             🎉 ยินดีด้วย! สมาชิกได้รับการเลื่อนระดับเป็น <u>${res.new_tier}</u>
           </div>
         `;
       }
 
       await Swal.fire({
-        icon: 'success',
-        title: 'สะสมแต้มสำเร็จ!',
+        icon: res.is_cod ? 'info' : 'success',
+        title: res.is_cod ? 'บันทึกออเดอร์ปลายทาง (COD)' : 'สะสมแต้มสำเร็จ!',
         html: `
           <div class="text-left space-y-1.5 text-sm">
-            <p>สมาชิก: <strong>${escapeHtml(res.member.name)}</strong></p>
+            <p>ลูกค้า: <strong>${escapeHtml(res.member.name)}</strong></p>
             <p>ยอดซื้อ: <strong>฿${amount.toLocaleString()}</strong></p>
-            <p class="text-emerald-700 font-bold text-base">แต้มที่ได้รับ: +${res.points_earned.toLocaleString()} แต้ม</p>
-            <p>แต้มสะสมคงเหลือใหม่: <strong>${res.member.points_balance.toLocaleString()} แต้ม</strong></p>
+            <p>การชำระ: <strong>${res.is_cod ? 'เก็บเงินปลายทาง (COD)' : 'โอนเงิน/พร้อมเพย์'}</strong></p>
+            <p class="${res.is_cod ? 'text-amber-700' : 'text-emerald-800'} font-bold text-base">
+              แต้มที่ได้รับ: ${res.is_cod ? '0 แต้ม (ยกเว้นแต้ม COD)' : `+${res.points_earned.toLocaleString()} แต้ม`}
+            </p>
+            <p>แต้มสะสมคงเหลือปัจจุบัน: <strong>${res.member.points_balance.toLocaleString()} แต้ม</strong></p>
             ${upgradeHtml}
           </div>
         `,
-        confirmButtonColor: '#10b981',
+        confirmButtonColor: '#064e3b',
         confirmButtonText: 'ตกลง'
       });
 
-      // Update selected member in state
+      // Update state
       selectMember(res.member);
       document.getElementById('posAmountInput').value = '';
       document.getElementById('posReceiptNo').value = '';
-      document.getElementById('posNote').value = '';
       calculatePointsPreview();
     } else {
       Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: res.message });
@@ -209,104 +237,60 @@ async function handlePosEarnPoints() {
     Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: err.message });
   } finally {
     btn.disabled = false;
-    btn.innerHTML = `<i class="fa-solid fa-circle-check text-xl"></i><span>ยืนยันบันทึกยอดซื้อ & สะสมแต้ม</span>`;
+    btn.innerHTML = `<i class="fa-solid fa-circle-check text-xl text-[#c59b4e]"></i><span>บันทึกยอดซื้อ & สะสมแต้มเข้าบัญชีลูกค้า</span>`;
   }
 }
 
 // --------------------------------------------------
-// IN-STORE REWARDS RENDER & REDEEM
+// CAMERA QR SCANNER
 // --------------------------------------------------
-function renderCashierRewards() {
-  const container = document.getElementById('cashierRewardsList');
+function toggleCameraScanner() {
+  const box = document.getElementById('cameraScannerBox');
+  const btnText = document.getElementById('scanBtnText');
 
-  if (allRewards.length === 0) {
-    container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">ไม่มีของรางวัลที่เปิดให้แลก</p>`;
+  if (box.classList.contains('hidden')) {
+    box.classList.remove('hidden');
+    btnText.innerText = 'ปิดกล้อง';
+    startScanner();
+  } else {
+    stopScanner();
+  }
+}
+
+function startScanner() {
+  if (typeof Html5Qrcode === 'undefined') {
+    alert('ระบบกล้องไม่พร้อมใช้งาน');
     return;
   }
 
-  container.innerHTML = allRewards.map(r => {
-    const hasEnough = selectedMember && selectedMember.points_balance >= r.points_required;
-    const isStockOut = r.stock <= 0;
-
-    return `
-      <div class="p-3 rounded-2xl border ${hasEnough ? 'border-rose-200 bg-rose-50/30' : 'border-slate-200 bg-white'} flex items-center justify-between gap-3 hover:shadow-sm transition">
-        <div class="flex items-center space-x-3 min-w-0">
-          <img src="${escapeHtml(r.image_url)}" alt="${escapeHtml(r.name)}" class="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-200">
-          <div class="min-w-0">
-            <h4 class="font-bold text-slate-800 text-xs sm:text-sm truncate">${escapeHtml(r.name)}</h4>
-            <div class="flex items-center space-x-2 text-[11px] text-slate-500 mt-0.5">
-              <span class="font-bold text-rose-700">${utils.formatNumber(r.points_required)} แต้ม</span>
-              <span>•</span>
-              <span class="${isStockOut ? 'text-rose-600 font-bold' : 'text-slate-500'}">เหลือ ${r.stock} ชิ้น</span>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <button onclick="handleInStoreRedeem(${r.id}, '${escapeHtml(r.name)}', ${r.points_required})"
-            ${!selectedMember || !hasEnough || isStockOut ? 'disabled' : ''}
-            class="px-3 py-1.5 rounded-xl font-bold text-xs transition whitespace-nowrap shadow-sm
-              ${!selectedMember || !hasEnough || isStockOut 
-                ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
-                : 'bg-rose-700 hover:bg-rose-800 text-white'
-              }">
-            ${isStockOut ? 'ของหมด' : 'แลกให้ลูกค้า'}
-          </button>
-        </div>
-      </div>
-    `;
-  }).join('');
+  html5QrScanner = new Html5Qrcode("qrReader");
+  html5QrScanner.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    (decodedText) => {
+      document.getElementById('posMemberInput').value = decodedText;
+      stopScanner();
+      searchMember();
+    },
+    (errorMessage) => {
+      // Scanning... ignore frame errors
+    }
+  ).catch(err => {
+    console.error("Camera error:", err);
+    Swal.fire({ icon: 'error', title: 'เปิดกล้องไม่สำเร็จ', text: 'กรุณาอนุญาตการเข้าถึงกล้องบนเบราว์เซอร์' });
+    stopScanner();
+  });
 }
 
-async function handleInStoreRedeem(rewardId, rewardName, pointsRequired) {
-  if (!selectedMember) return;
-
-  const confirm = await Swal.fire({
-    title: 'ยืนยันการแลกของรางวัลหน้าร้าน?',
-    html: `
-      <div class="text-left text-sm space-y-1">
-        <p>สมาชิก: <strong>${escapeHtml(selectedMember.name)}</strong></p>
-        <p>ของรางวัล: <strong>${rewardName}</strong></p>
-        <p>แต้มที่จะถูกหัก: <strong class="text-rose-600 font-bold">${pointsRequired.toLocaleString()} แต้ม</strong></p>
-      </div>
-    `,
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonColor: '#e11d48',
-    confirmButtonText: 'ยืนยันตัดแต้ม & มอบรางวัล',
-    cancelButtonText: 'ยกเลิก'
-  });
-
-  if (confirm.isConfirmed) {
-    try {
-      const res = await api.redeemReward(selectedMember.id, rewardId);
-      if (res.success) {
-        // Automatically verify voucher since it's delivered in store
-        await api.verifyVoucher(res.voucher_code);
-
-        utils.playSuccessSound();
-        utils.fireConfetti();
-
-        await Swal.fire({
-          icon: 'success',
-          title: 'แลกและมอบของรางวัลสำเร็จ!',
-          html: `รหัสคูปอง: <strong>${res.voucher_code}</strong><br>แต้มคงเหลือใหม่: <strong>${res.new_balance.toLocaleString()} แต้ม</strong>`,
-          confirmButtonColor: '#10b981'
-        });
-
-        // Refresh member data
-        const updatedRes = await api.getMember(selectedMember.id);
-        if (updatedRes.success) {
-          selectMember(updatedRes.member);
-        }
-        await loadSettingsAndRewards();
-      } else {
-        Swal.fire({ icon: 'error', title: 'แลกไม่สำเร็จ', text: res.message });
-      }
-    } catch (err) {
-      Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: err.message });
-    }
+function stopScanner() {
+  if (html5QrScanner) {
+    html5QrScanner.stop().then(() => {
+      html5QrScanner.clear();
+      html5QrScanner = null;
+    }).catch(e => console.warn(e));
   }
+  document.getElementById('cameraScannerBox').classList.add('hidden');
+  document.getElementById('scanBtnText').innerText = 'เปิดกล้องสแกน QR';
 }
 
 // --------------------------------------------------
@@ -330,12 +314,12 @@ async function handlePosVerifyVoucher() {
         title: 'ยืนยันการใช้คูปองเรียบร้อย!',
         html: `
           <div class="text-left text-sm space-y-1">
-            <p>ของรางวัล: <strong class="text-rose-700">${res.redemption.reward_name}</strong></p>
+            <p>ของรางวัล: <strong class="text-[#064e3b]">${res.redemption.reward_name}</strong></p>
             <p>สมาชิก: <strong>${res.redemption.member_name}</strong></p>
             <p class="text-xs text-slate-500">รหัสคูปอง: ${res.redemption.voucher_code}</p>
           </div>
         `,
-        confirmButtonColor: '#10b981'
+        confirmButtonColor: '#064e3b'
       });
       document.getElementById('posVoucherInput').value = '';
     } else {

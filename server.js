@@ -368,7 +368,7 @@ app.post('/api/members/:id/adjust', (req, res) => {
 // ----------------------------------------------------
 app.post('/api/pos/earn', (req, res) => {
   try {
-    const { identifier, amount, receipt_no, note } = req.body;
+    const { identifier, amount, receipt_no, note, payment_method } = req.body;
 
     if (!identifier) {
       return res.status(400).json({ success: false, message: 'กรุณากรอกเบอร์โทร หรือ รหัสสมาชิก' });
@@ -391,17 +391,23 @@ app.post('/api/pos/earn', (req, res) => {
 
     const settings = db.prepare('SELECT * FROM settings WHERE id = 1').get();
 
-    // Calculate base points and tier multiplier
-    // e.g., if point_rate is 1 (1 baht = 1 pt), multiplier is 1.2 => 100 baht = 120 pts
-    const multiplier = getMultiplier(member.tier, settings);
-    const calculatedPoints = Math.floor((purchaseAmount / (settings.point_rate || 1.0)) * multiplier);
+    // Check if Cash on Delivery (COD) -> Exempt from earning points!
+    const isCOD = payment_method === 'COD';
 
-    const newTotalSpent = member.total_spent + purchaseAmount;
+    let calculatedPoints = 0;
+    let multiplier = 1.0;
+
+    if (!isCOD) {
+      multiplier = getMultiplier(member.tier, settings);
+      calculatedPoints = Math.floor((purchaseAmount / (settings.point_rate || 1.0)) * multiplier);
+    }
+
+    const newTotalSpent = member.total_spent + (isCOD ? 0 : purchaseAmount);
     const newPointsBalance = member.points_balance + calculatedPoints;
 
-    // Check tier upgrade
+    // Check tier upgrade (only when paid)
     const newTier = calculateTier(newTotalSpent, settings);
-    const isUpgraded = newTier !== member.tier;
+    const isUpgraded = !isCOD && (newTier !== member.tier);
 
     // Update member record
     db.prepare(`
@@ -414,10 +420,15 @@ app.post('/api/pos/earn', (req, res) => {
 
     // Record transaction
     const descParts = [];
+    if (isCOD) {
+      descParts.push('ชำระแบบเก็บเงินปลายทาง (COD) - ไม่ได้รับแต้ม');
+    } else {
+      descParts.push(`ชำระผ่าน: ${payment_method || 'โอนเงิน/พร้อมเพย์'}`);
+    }
     if (receipt_no) descParts.push(`ใบเสร็จ: ${receipt_no}`);
     if (note) descParts.push(note);
-    if (multiplier > 1.0) descParts.push(`โบนัส Tier ${member.tier} x${multiplier}`);
-    const desc = descParts.length > 0 ? descParts.join(' | ') : 'สะสมแต้มจากการซื้อสินค้าหน้าร้าน';
+    if (multiplier > 1.0 && !isCOD) descParts.push(`โบนัส Tier ${member.tier} x${multiplier}`);
+    const desc = descParts.join(' | ');
 
     const txnCode = generateCode('TXN');
     db.prepare(`
@@ -429,7 +440,10 @@ app.post('/api/pos/earn', (req, res) => {
 
     res.json({
       success: true,
-      message: `สะสมแต้มสำเร็จ! ได้รับ +${calculatedPoints.toLocaleString()} แต้ม`,
+      is_cod: isCOD,
+      message: isCOD 
+        ? `บันทึกรายการสำเร็จ (ยอดเก็บเงินปลายทาง COD ไม่คำนวณแต้มสะสม)`
+        : `สะสมแต้มสำเร็จ! ได้รับ +${calculatedPoints.toLocaleString()} แต้ม`,
       transaction_code: txnCode,
       points_earned: calculatedPoints,
       multiplier,
