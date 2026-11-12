@@ -90,7 +90,9 @@ app.post('/api/settings', (req, res) => {
       silver_min, silver_multiplier,
       gold_min, gold_multiplier,
       platinum_min, platinum_multiplier,
-      diamond_min, diamond_multiplier
+      diamond_min, diamond_multiplier,
+      line_channel_access_token, line_channel_secret,
+      slipok_api_key, slipok_branch_id, store_bank_account
     } = req.body;
 
     db.prepare(`
@@ -107,6 +109,11 @@ app.post('/api/settings', (req, res) => {
         platinum_multiplier = ?,
         diamond_min = ?,
         diamond_multiplier = ?,
+        line_channel_access_token = ?,
+        line_channel_secret = ?,
+        slipok_api_key = ?,
+        slipok_branch_id = ?,
+        store_bank_account = ?,
         updated_at = datetime('now', 'localtime')
       WHERE id = 1
     `).run(
@@ -121,7 +128,12 @@ app.post('/api/settings', (req, res) => {
       parseFloat(platinum_min) || 3000,
       parseFloat(platinum_multiplier) || 1.5,
       parseFloat(diamond_min) || 8000,
-      parseFloat(diamond_multiplier) || 2.0
+      parseFloat(diamond_multiplier) || 2.0,
+      line_channel_access_token !== undefined ? line_channel_access_token : '',
+      line_channel_secret !== undefined ? line_channel_secret : '',
+      slipok_api_key !== undefined ? slipok_api_key : '',
+      slipok_branch_id !== undefined ? slipok_branch_id : '',
+      store_bank_account !== undefined ? store_bank_account : ''
     );
 
     const updated = db.prepare('SELECT * FROM settings WHERE id = 1').get();
@@ -757,6 +769,139 @@ app.post('/api/system/reset-demo', (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
+// ----------------------------------------------------
+// 9. LINE OA WEBHOOK (AUTO SLIP VERIFICATION & AUTO POINT)
+// ----------------------------------------------------
+app.post('/api/webhook/line', async (req, res) => {
+  // Return 200 immediately to LINE server
+  res.status(200).send('OK');
+
+  try {
+    const settings = db.prepare('SELECT * FROM settings WHERE id = 1').get();
+    const events = req.body?.events || [];
+
+    for (const event of events) {
+      if (event.type === 'message' && event.message.type === 'image') {
+        const lineUserId = event.source.userId;
+        const messageId = event.message.id;
+        const replyToken = event.replyToken;
+
+        if (settings.line_channel_access_token && settings.slipok_api_key && settings.slipok_branch_id) {
+          // Download slip image from LINE
+          const imgRes = await fetch(`https://api-data.line.me/v2/bot/message/${messageId}/content`, {
+            headers: { 'Authorization': `Bearer ${settings.line_channel_access_token}` }
+          });
+          const imgBuffer = await imgRes.arrayBuffer();
+
+          // Send to SlipOK verification API
+          const formData = new FormData();
+          formData.append('files', new Blob([imgBuffer], { type: 'image/jpeg' }), 'slip.jpg');
+
+          const slipRes = await fetch(`https://api.slipok.com/api/line/apikey/${settings.slipok_branch_id}`, {
+            method: 'POST',
+            headers: { 'x-authorization': settings.slipok_api_key },
+            body: formData
+          });
+
+          const slipData = await slipRes.json();
+          if (slipData.success && slipData.data) {
+            const slip = slipData.data;
+            const amount = parseFloat(slip.amount);
+            const transRef = slip.transRef || slip.transRefId || messageId;
+
+            // Check duplicate slip
+            const existingSlip = db.prepare('SELECT id FROM processed_slips WHERE trans_ref = ?').get(transRef);
+            if (existingSlip) {
+              await sendLineReply(settings.line_channel_access_token, replyToken, '⚠️ สลิปโอนเงินนี้เคยถูกใช้งานบันทึกแต้มไปแล้วค่ะ');
+              continue;
+            }
+
+            // Find or register member by LINE ID
+            let member = db.prepare('SELECT * FROM members WHERE notes LIKE ?').get(`%${lineUserId}%`);
+            if (!member) {
+              let profileName = 'ลูกค้า LINE';
+              try {
+                const profRes = await fetch(`https://api.line.me/v2/bot/profile/${lineUserId}`, {
+                  headers: { 'Authorization': `Bearer ${settings.line_channel_access_token}` }
+                });
+                const profData = await profRes.json();
+                if (profData.displayName) profileName = profData.displayName;
+              } catch (e) {}
+
+              const countAll = db.prepare('SELECT COUNT(*) as count FROM members').get();
+              const memberCode = `MEM-${1001 + countAll.count}`;
+              const phonePlaceholder = `LINE-${lineUserId.slice(-8)}`;
+
+              const result = db.prepare(`
+                INSERT INTO members (member_code, name, phone, tier, total_spent, points_balance, notes, created_at)
+                VALUES (?, ?, ?, 'Silver', 0, 0, ?, datetime('now', 'localtime'))
+              `).run(memberCode, profileName, phonePlaceholder, `LINE_UID:${lineUserId}`);
+              member = db.prepare('SELECT * FROM members WHERE id = ?').get(result.lastInsertRowid);
+            }
+
+            // Calculate points
+            const multiplier = getMultiplier(member.tier, settings);
+            const calculatedPoints = Math.floor((amount / (settings.point_rate || 1.0)) * multiplier);
+            const newTotalSpent = member.total_spent + amount;
+            const newPointsBalance = member.points_balance + calculatedPoints;
+            const newTier = calculateTier(newTotalSpent, settings);
+
+            db.prepare(`
+              UPDATE members SET
+                total_spent = ?,
+                points_balance = ?,
+                tier = ?
+              WHERE id = ?
+            `).run(newTotalSpent, newPointsBalance, newTier, member.id);
+
+            // Record transaction
+            const txnCode = generateCode('TXN');
+            db.prepare(`
+              INSERT INTO transactions (transaction_code, member_id, type, purchase_amount, points, balance_after, description, created_at)
+              VALUES (?, ?, 'EARN', ?, ?, ?, 'สะสมแต้มอัตโนมัติจากสลิปโอนเงิน', datetime('now', 'localtime'))
+            `).run(txnCode, member.id, amount, calculatedPoints, newPointsBalance);
+
+            // Record processed slip to prevent reuse
+            db.prepare(`
+              INSERT INTO processed_slips (trans_ref, amount, member_id, created_at)
+              VALUES (?, ?, ?, datetime('now', 'localtime'))
+            `).run(transRef, amount, member.id);
+
+            // Send celebration push message (Short & concise format)
+            const liffLink = settings.liff_url || 'https://liff.line.me/yunnan-import';
+            const replyMsg = `ตรวจสอบยอดโอนเงิน ฿${amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} สำเร็จแล้วค่ะ!\n` +
+              `✨ คุณได้รับแต้มสะสม +${calculatedPoints.toLocaleString()} แต้ม เรียบร้อยแล้วค่ะ\n` +
+              `👉 กดเปิดดูบัตรสมาชิกของคุณได้ที่นี่: ${liffLink}`;
+
+            await sendLineReply(settings.line_channel_access_token, replyToken, replyMsg);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error handling LINE webhook:', err);
+  }
+});
+
+async function sendLineReply(channelAccessToken, replyToken, text) {
+  if (!channelAccessToken || !replyToken) return;
+  try {
+    await fetch('https://api.line.me/v2/bot/message/reply', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${channelAccessToken}`
+      },
+      body: JSON.stringify({
+        replyToken,
+        messages: [{ type: 'text', text }]
+      })
+    });
+  } catch (e) {
+    console.error('Error sending LINE reply:', e);
+  }
+}
 
 // Fallback for SPA routing if needed
 app.use((req, res) => {
