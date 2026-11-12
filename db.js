@@ -29,7 +29,20 @@ function initDatabase() {
       diamond_min REAL DEFAULT 8000,
       diamond_multiplier REAL DEFAULT 2.0,
       theme_primary TEXT DEFAULT '#064e3b',
+      line_channel_access_token TEXT DEFAULT '',
+      line_channel_secret TEXT DEFAULT '',
+      slipok_api_key TEXT DEFAULT '',
+      slipok_branch_id TEXT DEFAULT '',
+      store_bank_account TEXT DEFAULT '',
       updated_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS processed_slips (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      trans_ref TEXT UNIQUE NOT NULL,
+      amount REAL NOT NULL,
+      member_id INTEGER,
+      created_at TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS members (
@@ -85,6 +98,22 @@ function initDatabase() {
       FOREIGN KEY(reward_id) REFERENCES rewards(id)
     );
   `);
+
+  // Add columns to settings if not existing
+  const newCols = [
+    'line_channel_access_token',
+    'line_channel_secret',
+    'slipok_api_key',
+    'slipok_branch_id',
+    'store_bank_account'
+  ];
+  for (const col of newCols) {
+    try {
+      db.exec(`ALTER TABLE settings ADD COLUMN ${col} TEXT DEFAULT '';`);
+    } catch (e) {
+      // Column already exists
+    }
+  }
 
   // Initialize or update settings for Yunnan Import
   const checkSettings = db.prepare('SELECT COUNT(*) as count FROM settings').get();

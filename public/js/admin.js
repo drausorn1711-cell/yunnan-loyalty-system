@@ -652,7 +652,18 @@ async function openSettingsModal() {
   document.getElementById('setDiamondMin').value = s.diamond_min;
   document.getElementById('setDiamondMultiplier').value = s.diamond_multiplier || 2.0;
 
+  // LINE & SlipOK settings
+  document.getElementById('setLineToken').value = s.line_channel_access_token || '';
+  document.getElementById('setSlipokKey').value = s.slipok_api_key || '';
+  document.getElementById('setSlipokBranch').value = s.slipok_branch_id || '';
+  document.getElementById('lineWebhookUrlText').innerText = `${window.location.origin}/api/webhook/line`;
+
   openModal('settingsModal');
+}
+
+function copyWebhookUrl() {
+  const url = document.getElementById('lineWebhookUrlText').innerText;
+  utils.copyText(url, 'คัดลอก LINE Webhook URL เรียบร้อยแล้ว!');
 }
 
 async function handleSaveSettings(e) {
@@ -668,7 +679,10 @@ async function handleSaveSettings(e) {
     platinum_min: document.getElementById('setPlatinumMin').value,
     platinum_multiplier: document.getElementById('setPlatinumMultiplier').value,
     diamond_min: document.getElementById('setDiamondMin').value,
-    diamond_multiplier: document.getElementById('setDiamondMultiplier').value
+    diamond_multiplier: document.getElementById('setDiamondMultiplier').value,
+    line_channel_access_token: document.getElementById('setLineToken').value.trim(),
+    slipok_api_key: document.getElementById('setSlipokKey').value.trim(),
+    slipok_branch_id: document.getElementById('setSlipokBranch').value.trim()
   };
 
   try {
