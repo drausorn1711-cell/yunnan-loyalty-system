@@ -392,8 +392,8 @@ async function loadRewards() {
             <p class="text-xs text-slate-500 line-clamp-2">${escapeHtml(r.description || 'ไม่มีคำอธิบาย')}</p>
             
             <div class="flex items-center justify-between pt-2">
-              <span class="text-xs font-medium text-slate-500">
-                สิทธิ์: <strong class="text-slate-800">${r.min_tier}+</strong>
+              <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                <i class="fa-solid fa-check text-[10px] mr-1"></i>แลกได้ทุกระดับ
               </span>
               <div class="flex items-baseline space-x-1">
                 <span class="text-xl font-extrabold text-[#064e3b]">${utils.formatNumber(r.points_required)}</span>

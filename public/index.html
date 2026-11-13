@@ -604,30 +604,7 @@
           </select>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">แต้มที่ใช้แลก <span class="text-seal-800">*</span></label>
-            <input type="number" id="rewardFormPoints" required min="1" placeholder="100"
-              class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">จำนวนสต็อก <span class="text-seal-800">*</span></label>
-            <input type="number" id="rewardFormStock" required min="0" placeholder="10"
-              class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">ระดับสมาชิกขั้นต่ำที่แลกได้</label>
-          <select id="rewardFormMinTier" class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
-            <option value="Silver">Silver ขึ้นไป (ทุกคน)</option>
-            <option value="Gold">Gold ขึ้นไป</option>
-            <option value="Platinum">Platinum ขึ้นไป</option>
-            <option value="Diamond">Diamond เท่านั้น</option>
-          </select>
-        </div>
-
-        <!-- REWARD IMAGE SECTION (UPLOAD FROM DEVICE OR PASTE URL + GIFT BOX FALLBACK) -->
+        <!-- REWARD IMAGE SECTION (MOVED DIRECTLY BELOW CATEGORY) -->
         <div class="space-y-2">
           <div class="flex items-center justify-between">
             <label class="block text-xs font-semibold text-slate-700">รูปภาพของรางวัล</label>
@@ -681,6 +658,22 @@
             </button>
           </div>
         </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">แต้มที่ใช้แลก <span class="text-seal-800">*</span></label>
+            <input type="number" id="rewardFormPoints" required min="1" placeholder="100"
+              class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">จำนวนสต็อก <span class="text-seal-800">*</span></label>
+            <input type="number" id="rewardFormStock" required min="0" placeholder="10"
+              class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
+          </div>
+        </div>
+
+        <!-- Hidden Min Tier (แลกได้ทุกระดับ ขอแค่แต้มพอ) -->
+        <input type="hidden" id="rewardFormMinTier" value="Silver">
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">รายละเอียด / เงื่อนไข</label>

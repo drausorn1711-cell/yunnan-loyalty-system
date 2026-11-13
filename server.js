@@ -600,16 +600,8 @@ app.post('/api/rewards/redeem', (req, res) => {
       });
     }
 
-    // Check tier eligibility
-    const tierRanking = { Silver: 1, Gold: 2, Platinum: 3, Diamond: 4 };
-    const memberRank = tierRanking[member.tier] || 1;
-    const requiredRank = tierRanking[reward.min_tier] || 1;
-    if (memberRank < requiredRank) {
-      return res.status(400).json({
-        success: false,
-        message: `สิทธิ์เฉพาะสมาชิกตั้งแต่ระดับ ${reward.min_tier} ขึ้นไป (ท่านอยู่ในระดับ ${member.tier})`
-      });
-    }
+    // Check tier eligibility (Allow all member tiers as long as points are sufficient)
+    // All members (Silver, Gold, Platinum, Diamond) can redeem freely if points >= points_required
 
     // Deduct points & update stock
     const newBalance = member.points_balance - reward.points_required;
