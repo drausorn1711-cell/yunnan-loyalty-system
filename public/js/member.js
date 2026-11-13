@@ -284,11 +284,10 @@ function renderRewardsCatalog() {
           </div>
           <div class="p-3 flex-1 flex flex-col justify-between">
             <div>
-              <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-[#f8f5ee] text-[#064e3b]">${escapeHtml(r.category)}</span>
-                <span class="text-[11px] font-bold text-[#996515]">${utils.formatNumber(r.points_required)} แต้ม</span>
+              <div class="flex items-start justify-between gap-1">
+                <h4 class="font-bold text-slate-800 text-xs sm:text-sm line-clamp-1">${escapeHtml(r.name)}</h4>
+                <span class="text-xs font-extrabold text-[#996515] shrink-0 ml-1.5">${utils.formatNumber(r.points_required)} แต้ม</span>
               </div>
-              <h4 class="font-bold text-slate-800 text-xs sm:text-sm mt-1 line-clamp-1">${escapeHtml(r.name)}</h4>
               <p class="text-[11px] text-slate-500 line-clamp-1 mt-0.5">${escapeHtml(r.description || '')}</p>
             </div>
 

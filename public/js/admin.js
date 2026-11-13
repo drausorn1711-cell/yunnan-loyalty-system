@@ -382,9 +382,6 @@ async function loadRewards() {
             <span class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-xs font-bold ${r.stock > 0 ? 'bg-[#064e3b] text-white' : 'bg-red-700 text-white'} shadow">
               ${r.stock > 0 ? `สต็อก: ${r.stock}` : 'หมดชั่วคราว'}
             </span>
-            <span class="absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-black/60 text-white backdrop-blur-md">
-              ${escapeHtml(r.category)}
-            </span>
           </div>
 
           <div class="p-4 space-y-2">

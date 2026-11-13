@@ -594,17 +594,10 @@
             class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">หมวดหมู่</label>
-          <select id="rewardFormCategory" class="w-full px-3.5 py-2 bg-[#fbf9f4] border border-[#e5dfd3] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#064e3b]">
-            <option value="ชา & สินค้ายูนนาน">ชา & สินค้ายูนนาน</option>
-            <option value="คูปองส่วนลด">คูปองส่วนลด</option>
-            <option value="ของพรีเมียม">ของพรีเมียม</option>
-            <option value="บัตรกำนัล">บัตรกำนัล</option>
-          </select>
-        </div>
+        <!-- Hidden Category (ไม่บังคับระบุหมวดหมู่) -->
+        <input type="hidden" id="rewardFormCategory" value="ของรางวัล">
 
-        <!-- REWARD IMAGE SECTION (MOVED DIRECTLY BELOW CATEGORY) -->
+        <!-- REWARD IMAGE SECTION -->
         <div class="space-y-2">
           <div class="flex items-center justify-between">
             <label class="block text-xs font-semibold text-slate-700">รูปภาพของรางวัล</label>
