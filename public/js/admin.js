@@ -377,8 +377,8 @@ async function loadRewards() {
     grid.innerHTML = currentRewards.map(r => `
       <div class="bg-white rounded-2xl border border-[#e5dfd3] overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
         <div>
-          <div class="relative h-44 bg-[#f8f5ee] overflow-hidden">
-            <img src="${escapeHtml(r.image_url)}" alt="${escapeHtml(r.name)}" class="w-full h-full object-cover">
+          <div class="relative h-44 bg-[#f8f5ee] overflow-hidden flex items-center justify-center">
+            <img src="${escapeHtml(r.image_url || '/img/gift-box.svg')}" alt="${escapeHtml(r.name)}" onerror="this.onerror=null; this.src='/img/gift-box.svg';" class="w-full h-full object-cover">
             <span class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-xs font-bold ${r.stock > 0 ? 'bg-[#064e3b] text-white' : 'bg-red-700 text-white'} shadow">
               ${r.stock > 0 ? `สต็อก: ${r.stock}` : 'หมดชั่วคราว'}
             </span>
@@ -423,6 +423,94 @@ async function loadRewards() {
   }
 }
 
+// ---------------------------------------------
+// REWARD IMAGE UPLOAD, PRESETS & FALLBACK
+// ---------------------------------------------
+const DEFAULT_GIFT_BOX = '/img/gift-box.svg';
+
+function updateRewardImagePreview(src) {
+  const wrap = document.getElementById('rewardImagePreviewWrap');
+  const empty = document.getElementById('rewardImageEmptyState');
+  const preview = document.getElementById('rewardImagePreview');
+  if (!wrap || !empty || !preview) return;
+
+  if (src && src.trim()) {
+    preview.src = src.trim();
+    preview.onerror = function() {
+      this.onerror = null;
+      this.src = DEFAULT_GIFT_BOX;
+    };
+    wrap.classList.remove('hidden');
+    empty.classList.add('hidden');
+  } else {
+    preview.src = '';
+    wrap.classList.add('hidden');
+    empty.classList.remove('hidden');
+  }
+}
+
+function clearRewardImage() {
+  const input = document.getElementById('rewardFormImage');
+  if (input) input.value = '';
+  const fileInput = document.getElementById('rewardFileInput');
+  if (fileInput) fileInput.value = '';
+  updateRewardImagePreview('');
+}
+
+function handleRewardUrlInput(url) {
+  updateRewardImagePreview(url);
+}
+
+function handleRewardFileUpload(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  // Compress client-side using Canvas to keep size around 30-60KB
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const maxDim = 800;
+      let w = img.width;
+      let h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        } else {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      
+      document.getElementById('rewardFormImage').value = compressedDataUrl;
+      updateRewardImagePreview(compressedDataUrl);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function setPresetRewardImage(type) {
+  const presets = {
+    'ชาผู่เอ๋อร์': 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80',
+    'เห็ดทรัฟเฟิล': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80',
+    'ส่วนลด 20%': 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&auto=format&fit=crop&q=80',
+    'ส่วนลด 50฿': 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?w=600&auto=format&fit=crop&q=80',
+    'ของขวัญ': DEFAULT_GIFT_BOX
+  };
+
+  const url = presets[type] || DEFAULT_GIFT_BOX;
+  document.getElementById('rewardFormImage').value = url;
+  updateRewardImagePreview(url);
+}
+
 function openAddRewardModal() {
   document.getElementById('rewardModalTitle').innerText = 'เพิ่มของรางวัลใหม่';
   document.getElementById('editRewardId').value = '';
@@ -433,6 +521,7 @@ function openAddRewardModal() {
   document.getElementById('rewardFormMinTier').value = 'Silver';
   document.getElementById('rewardFormImage').value = '';
   document.getElementById('rewardFormDesc').value = '';
+  clearRewardImage();
   openModal('rewardModal');
 }
 
@@ -447,8 +536,9 @@ function openEditRewardModal(id) {
   document.getElementById('rewardFormPoints').value = r.points_required;
   document.getElementById('rewardFormStock').value = r.stock;
   document.getElementById('rewardFormMinTier').value = r.min_tier;
-  document.getElementById('rewardFormImage').value = r.image_url;
+  document.getElementById('rewardFormImage').value = r.image_url || '';
   document.getElementById('rewardFormDesc').value = r.description || '';
+  updateRewardImagePreview(r.image_url || '');
   openModal('rewardModal');
 }
 

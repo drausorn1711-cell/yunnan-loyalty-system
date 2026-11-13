@@ -279,8 +279,8 @@ function renderRewardsCatalog() {
     return `
       <div class="bg-white rounded-2xl border border-[#e5dfd3] overflow-hidden shadow-sm hover:shadow-md transition">
         <div class="flex">
-          <div class="w-28 h-28 bg-[#f8f5ee] shrink-0">
-            <img src="${escapeHtml(r.image_url)}" alt="${escapeHtml(r.name)}" class="w-full h-full object-cover">
+          <div class="w-28 h-28 bg-[#f8f5ee] shrink-0 overflow-hidden flex items-center justify-center">
+            <img src="${escapeHtml(r.image_url || '/img/gift-box.svg')}" alt="${escapeHtml(r.name)}" onerror="this.onerror=null; this.src='/img/gift-box.svg';" class="w-full h-full object-cover">
           </div>
           <div class="p-3 flex-1 flex flex-col justify-between">
             <div>
