@@ -46,8 +46,16 @@ async function loadStats() {
     document.getElementById('topPointRateBadge').innerText = `${stats.settings.point_rate} บาท = 1 แต้ม`;
     
     // LIFF Link
-    const liffUrl = stats.settings.liff_url || 'https://liff.line.me/yunnan-import';
-    document.getElementById('liffLinkText').innerText = liffUrl;
+    const liffUrl = (stats.settings.liff_url && !stats.settings.liff_url.includes('yunnan-import')) ? stats.settings.liff_url : 'https://yunnan-loyalty-system.vercel.app/member.html';
+    const liffEl = document.getElementById('liffLinkText');
+    if (liffEl) {
+      liffEl.innerText = liffUrl;
+      liffEl.href = liffUrl;
+    }
+    const openBtn = document.getElementById('openLiffLinkBtn');
+    if (openBtn) {
+      openBtn.href = liffUrl;
+    }
 
     // Metrics
     document.getElementById('statMembersCount').innerText = utils.formatNumber(stats.total_members);
@@ -61,7 +69,8 @@ async function loadStats() {
 }
 
 function copyLiffLink() {
-  const text = document.getElementById('liffLinkText').innerText;
+  const el = document.getElementById('liffLinkText');
+  const text = el ? (el.href || el.innerText) : 'https://yunnan-loyalty-system.vercel.app/member.html';
   utils.copyText(text, 'คัดลอกลิงก์สำหรับ LINE OA เรียบร้อยแล้ว!');
 }
 

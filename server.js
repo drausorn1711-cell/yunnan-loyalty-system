@@ -869,7 +869,7 @@ app.post('/api/webhook/line', async (req, res) => {
             `).run(transRef, amount, member.id);
 
             // Send celebration push message (Short & concise format)
-            const liffLink = settings.liff_url || 'https://liff.line.me/yunnan-import';
+            const liffLink = settings.liff_url || 'https://yunnan-loyalty-system.vercel.app/member.html';
             const replyMsg = `ตรวจสอบยอดโอนเงิน ฿${amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} สำเร็จแล้วค่ะ!\n` +
               `✨ คุณได้รับแต้มสะสม +${calculatedPoints.toLocaleString()} แต้ม เรียบร้อยแล้วค่ะ\n` +
               `👉 กดเปิดดูบัตรสมาชิกของคุณได้ที่นี่: ${liffLink}`;

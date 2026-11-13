@@ -128,7 +128,7 @@ function initDatabase() {
         updated_at
       ) VALUES (
         1, 'ยูนนาน YUNNAN IMPORT', 'ระบบสะสมแต้มและสิทธิประโยชน์สมาชิก ยูนนาน (1 บาท = 1 แต้ม)',
-        1.0, 'https://liff.line.me/yunnan-import',
+        1.0, 'https://yunnan-loyalty-system.vercel.app/member.html',
         0, 1.0,
         1000, 1.2,
         3000, 1.5,
@@ -142,8 +142,7 @@ function initDatabase() {
       UPDATE settings SET
         store_name = 'ยูนนาน YUNNAN IMPORT',
         store_tagline = 'ระบบสะสมแต้มและสิทธิประโยชน์สมาชิก ยูนนาน (1 บาท = 1 แต้ม)',
-        liff_url = 'https://liff.line.me/yunnan-import'
-      WHERE id = 1
+        liff_url = 'https://yunnan-loyalty-system.vercel.app/member.html' WHERE id = 1 AND (liff_url IS NULL OR liff_url = '' OR liff_url LIKE '%yunnan-import%')
     `).run();
   }
 }
